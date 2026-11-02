@@ -61,7 +61,10 @@ export function fromHubSetup(g: GameSetup): LocalSetup {
   const seats: LocalSeat[] = g.bots.map((level, i) => {
     if (level) return { kind: "bot", level, name: LEVEL_NAMES[level] };
     const first = g.bots.indexOf(null) === i;
-    return { kind: "human", name: first && humans === 1 ? "You" : first ? g.name : SEAT_NAMES[i]! };
+    // Pass & play: the hub calls the other seats by their colours, so the
+    // first seat does too unless its player typed a name.
+    const named = g.name && g.name !== "Player" ? g.name : SEAT_NAMES[i]!;
+    return { kind: "human", name: first && humans === 1 ? "You" : first ? named : SEAT_NAMES[i]! };
   });
   return { preset: g.preset, config: g.config, seats };
 }

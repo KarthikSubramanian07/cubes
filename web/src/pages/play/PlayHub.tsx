@@ -260,7 +260,7 @@ export function PlayHub({ onStart, onJoin, initialKind = "online", initialName =
           <ul className="seatlist">
             {Array.from({ length: config.seats }, (_, i) => (
               <li key={i} className="seatlist__row">
-                <SeatChip seat={i} label={i === 0 ? setup.name : kind === "bots" ? `${AI_LABELS[setup.bots[i] ?? "flare"].label} bot` : kind === "online" ? "open seat" : `player ${i + 1}`} />
+                <SeatChip seat={i} label={i === 0 ? setup.name : kind === "bots" ? `${AI_LABELS[setup.bots[i] ?? "flare"].label} bot` : kind === "online" ? "open seat" : "next at the table"} />
                 {kind === "bots" && i > 0 && (
                   <SegmentedControl
                     label={`Bot level for seat ${i + 1}`}
