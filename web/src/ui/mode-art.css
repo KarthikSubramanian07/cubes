@@ -1,0 +1,124 @@
+.ma {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.ma__grid line {
+  stroke: var(--line);
+  stroke-width: 0.7;
+}
+
+.ma__cell {
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.ma__node {
+  fill: none;
+  stroke: var(--seat-2-ink);
+  stroke-width: 1.1;
+}
+
+.ma__haze {
+  fill: color-mix(in oklab, var(--ink) 9%, transparent);
+}
+
+.ma__sight {
+  fill: none;
+  stroke: var(--seat-1-ink);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 2.4;
+}
+
+.ma__q {
+  font: 600 11px var(--hand);
+  fill: var(--muted);
+}
+
+.ma__ash {
+  fill: color-mix(in oklab, var(--ink) 16%, transparent);
+}
+
+.ma__storm-line,
+.ma__wrap,
+.ma__link {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ma__storm-line {
+  stroke-dasharray: 3 3;
+  opacity: 0.8;
+}
+
+.ma__floor {
+  fill: color-mix(in oklab, var(--ink) 5%, transparent);
+  stroke: var(--line-strong);
+  stroke-width: 0.8;
+  stroke-dasharray: 2.5 2;
+}
+
+.ma__frame3d {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 0.9;
+  stroke-dasharray: 2.5 2;
+}
+
+.ma__cube path {
+  stroke: color-mix(in oklab, var(--c) 60%, var(--ink));
+  stroke-width: 0.5;
+  stroke-linejoin: round;
+}
+
+.ma__cube-t {
+  fill: color-mix(in oklab, var(--c) 82%, white);
+}
+.ma__cube-l {
+  fill: var(--c);
+}
+.ma__cube-r {
+  fill: color-mix(in oklab, var(--c) 72%, black);
+}
+
+.surge-icon {
+  width: 44px;
+  height: 44px;
+  overflow: visible;
+}
+
+.si-fill {
+  fill: var(--accent);
+}
+
+.si-fill--muted {
+  fill: color-mix(in oklab, var(--seat-3) 80%, var(--bg));
+}
+
+.si-ghost {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-dasharray: 3 2.5;
+}
+
+.si-line,
+.si-crack {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.si-crack {
+  stroke: var(--bg);
+  stroke-width: 2.2;
+}
+
+.si-dash {
+  stroke-dasharray: 3 3;
+}
