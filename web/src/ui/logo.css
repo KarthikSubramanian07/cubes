@@ -1,0 +1,59 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  border-radius: 8px;
+}
+
+.logo__word {
+  font: 400 27px / 1 var(--serif);
+  letter-spacing: -0.03em;
+  transform: translateY(-1px);
+}
+
+.logo__mark {
+  overflow: visible;
+}
+
+.logo__a rect {
+  fill: var(--accent);
+}
+
+.logo__b rect {
+  fill: var(--ink);
+}
+
+.logo__a,
+.logo__b {
+  transform-origin: 14px 14px;
+  transition: transform 520ms var(--ease-spring);
+}
+
+.logo__spark path {
+  fill: var(--seat-2);
+}
+
+.logo__spark {
+  transform-origin: 14px 14px;
+  transform: scale(0) rotate(0deg);
+  opacity: 0;
+  transition:
+    transform 420ms var(--ease-spring),
+    opacity 200ms;
+}
+
+.logo:hover .logo__a,
+.logo:focus-visible .logo__a {
+  transform: rotate(-14deg);
+}
+.logo:hover .logo__b,
+.logo:focus-visible .logo__b {
+  transform: rotate(14deg);
+}
+.logo:hover .logo__spark,
+.logo:focus-visible .logo__spark {
+  transform: scale(1) rotate(45deg);
+  opacity: 1;
+}

@@ -1,0 +1,112 @@
+/*
+ * Motion. Hand-drawn strokes draw themselves with stroke-dashoffset on an expo-out curve.
+ * Paths use pathLength="1" so a single dasharray works for every shape.
+ * Everything here is skipped under prefers-reduced-motion.
+ */
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes swipe {
+  from {
+    background-size: 0% var(--hl-h, 44%);
+  }
+  to {
+    background-size: 100% var(--hl-h, 44%);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(var(--tilt, -3deg));
+  }
+  50% {
+    transform: rotate(calc(var(--tilt, -3deg) + 1.5deg));
+  }
+}
+
+/* Entrance helper: add .reveal; becomes visible when [data-inview] is set by useInView. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition:
+      opacity 700ms var(--ease-out),
+      transform 900ms var(--ease-out);
+    transition-delay: var(--delay, 0ms);
+  }
+
+  .reveal[data-inview="true"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .rise {
+    animation: rise 900ms var(--ease-out) both;
+    animation-delay: var(--delay, 0ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,226 @@
+/* ---- Modal ------------------------------------------------------------------- */
+.modal {
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xl);
+  background: var(--panel);
+  color: var(--ink-2);
+  box-shadow: 0 40px 120px -40px rgba(0, 0, 0, 0.5);
+  overflow: visible;
+}
+
+.modal::backdrop {
+  background: color-mix(in oklab, var(--bg-deep) 70%, transparent);
+  backdrop-filter: blur(3px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .modal[open] {
+    animation: rise 420ms var(--ease-out);
+  }
+  .modal[open]::backdrop {
+    animation: fade 300ms var(--ease-out);
+  }
+}
+
+.modal__body {
+  position: relative;
+  padding: 32px;
+  overflow: auto;
+  max-height: calc(100dvh - 48px);
+}
+
+.modal__title {
+  font-size: 2rem;
+  line-height: 1.05;
+  margin-bottom: 14px;
+  padding-right: 32px;
+}
+
+.modal__note {
+  font: 500 22px / 1 var(--hand);
+  color: var(--accent);
+  transform: rotate(-3deg);
+  transform-origin: left;
+  margin-bottom: 10px;
+}
+
+.modal__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.modal__close:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.modal__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1.5px dashed var(--line);
+}
+
+/* ---- Toasts ------------------------------------------------------------------ */
+.toasts {
+  position: fixed;
+  left: 50%;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 200;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+  width: min(440px, calc(100% - 24px));
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px 12px 18px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--bg);
+  font: 500 14.5px / 1.35 var(--sans);
+  pointer-events: auto;
+  box-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast {
+    animation: rise 380ms var(--ease-out);
+  }
+}
+
+.toast--hand {
+  font: 600 22px / 1.05 var(--hand);
+  letter-spacing: 0.01em;
+}
+
+.toast--accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.toast__x {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.toast__x:hover {
+  opacity: 1;
+}
+
+/* ---- Tooltip ----------------------------------------------------------------- */
+.tip-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.tip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 50;
+  width: max-content;
+  max-width: 240px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--bg);
+  font: 500 12.5px / 1.35 var(--sans);
+  text-align: center;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur) var(--ease-out);
+}
+
+.tip--bottom {
+  bottom: auto;
+  top: calc(100% + 8px);
+  transform: translate(-50%, -4px);
+}
+
+.tip[data-open="true"] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.tip--hand {
+  font: 600 19px / 1 var(--hand);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ---- CopyField --------------------------------------------------------------- */
+.copyfield {
+  display: grid;
+  gap: 8px;
+}
+
+.copyfield__row {
+  display: flex;
+  gap: 8px;
+}
+
+.copyfield__input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.copyfield__btn {
+  flex: none;
+  min-width: 112px;
+}
+
+.copyfield[data-status="copied"] .copyfield__btn {
+  background: var(--seat-1);
+  color: #fff;
+}
+
+.copyfield__status {
+  min-height: 1.3em;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+@media (max-width: 420px) {
+  .copyfield__row {
+    flex-direction: column;
+  }
+  .copyfield__btn {
+    width: 100%;
+  }
+}

@@ -1,0 +1,56 @@
+.seatchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font: 500 14px / 1.2 var(--sans);
+  color: var(--ink-2);
+}
+
+.seatchip__dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--seat);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, black 12%, transparent);
+  transform: rotate(45deg) scale(0.86);
+}
+
+.seatchip--sm {
+  font-size: 13px;
+  gap: 6px;
+}
+.seatchip--sm .seatchip__dot {
+  width: 9px;
+  height: 9px;
+}
+
+.seatchip__name {
+  color: var(--seat-ink);
+  font-weight: 600;
+}
+
+.seatchip__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seatchip.is-active .seatchip__dot {
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--seat) 28%, transparent), 0 0 14px var(--seat);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .seatchip.is-active .seatchip__dot {
+    animation: pulse-glow 1.8s var(--ease-in-out) infinite;
+  }
+}
+
+.seatchip.is-dark {
+  opacity: 0.45;
+}
+.seatchip.is-dark .seatchip__dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--seat);
+}

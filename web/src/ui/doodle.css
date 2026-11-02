@@ -1,0 +1,64 @@
+.doodle {
+  color: var(--accent);
+  pointer-events: none;
+  max-width: none;
+}
+
+.doodle__stroke {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+@keyframes doodle-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .doodle[data-animate="true"] .doodle__stroke {
+    stroke-dasharray: 1 2;
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+
+  .doodle[data-animate="true"][data-inview="true"] .doodle__stroke {
+    animation: doodle-draw var(--dur-draw) var(--ease-out) both;
+    animation-delay: calc(var(--delay, 0ms) + var(--i, 0) * 280ms);
+  }
+}
+
+/* Positioning helpers for wrapping a word. */
+.doodled {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.doodled > .doodle--underline,
+.doodled > .doodle--double-underline {
+  position: absolute;
+  left: -2%;
+  width: 104%;
+  bottom: -0.16em;
+  height: 0.22em;
+  min-height: 9px;
+}
+
+.doodled > .doodle--circle {
+  position: absolute;
+  left: -14%;
+  top: -18%;
+  width: 128%;
+  height: 136%;
+}

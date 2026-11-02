@@ -1,17 +1,49 @@
-import { Suspense, lazy } from "react";
-import { BrowserRouter, Route, Routes } from "react-router";
+import "@fontsource-variable/newsreader/opsz.css";
+import "@fontsource-variable/newsreader/opsz-italic.css";
+import "@fontsource-variable/hanken-grotesk/index.css";
+import "@fontsource-variable/jetbrains-mono/index.css";
+import "@fontsource/caveat/500.css";
+import "@fontsource/caveat/600.css";
+import "@/styles/index.css";
 
-const LocalGamePage = lazy(() => import("@/game/LocalGamePage"));
+import { createBrowserRouter } from "react-router";
+import { RouterProvider } from "react-router/dom";
+import { ToastProvider } from "@/ui/Toast";
+import { CornerParty } from "./CornerParty";
+import { RouteError, SiteLayout } from "./SiteLayout";
+import { greetConsole } from "./console";
+
+export const routes = [
+  {
+    Component: SiteLayout,
+    ErrorBoundary: RouteError,
+    HydrateFallback: () => null,
+    children: [
+      { index: true, lazy: () => import("@/pages/Landing") },
+      { path: "rules", lazy: () => import("@/pages/Rules") },
+      { path: "play", lazy: () => import("@/pages/Play") },
+      { path: "r/:code", lazy: () => import("@/pages/Room") },
+      { path: "*", lazy: () => import("@/pages/NotFound") },
+    ],
+  },
+  {
+    path: "game/local",
+    lazy: () => import("@/game/LocalGamePage").then((m) => ({ Component: m.default })),
+    HydrateFallback: () => null,
+    ErrorBoundary: RouteError,
+  },
+  { path: "game/:id", lazy: () => import("@/pages/Game"), HydrateFallback: () => null, ErrorBoundary: RouteError },
+];
+
+const router = createBrowserRouter(routes);
+
+greetConsole();
 
 export function App() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={null}>
-        <Routes>
-          <Route path="/game/local" element={<LocalGamePage />} />
-          <Route path="*" element={<main style={{ padding: 48 }}>cubes</main>} />
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <ToastProvider>
+      <RouterProvider router={router} />
+      <CornerParty />
+    </ToastProvider>
   );
 }

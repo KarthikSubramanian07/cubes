@@ -1,0 +1,129 @@
+.glyph {
+  flex: none;
+  overflow: visible;
+}
+
+.glyph__cell {
+  fill: var(--glyph);
+}
+
+.glyph--ghost .glyph__cell {
+  fill: color-mix(in oklab, var(--glyph) 14%, transparent);
+  stroke: var(--glyph);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 2.5;
+}
+
+.glyph--glow .glyph__cell {
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--glyph) 70%, transparent));
+}
+
+.glyph__outline {
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+/* ---- MiniBoard ---------------------------------------------------------------- */
+.miniboard {
+  --mb-bg: var(--panel-2);
+  --mb-grid: var(--line);
+  overflow: visible;
+  max-width: 100%;
+  height: auto;
+}
+
+.miniboard__bg {
+  fill: var(--mb-bg);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.miniboard__grid {
+  stroke: var(--mb-grid);
+  stroke-width: 1;
+}
+
+.miniboard__cell {
+  fill: var(--c);
+}
+
+.miniboard__cell--placed {
+  fill: color-mix(in oklab, var(--c) 82%, var(--mb-bg));
+}
+
+.miniboard__core {
+  fill: var(--c);
+}
+
+.miniboard__core-ring {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 1.4;
+  opacity: 0.55;
+}
+
+.miniboard__core-dot {
+  fill: var(--mb-bg);
+}
+
+.miniboard__node {
+  fill: none;
+  stroke: var(--seat-2-ink);
+  stroke-width: 1.5;
+}
+
+.miniboard__node-dot {
+  fill: var(--seat-2);
+}
+
+.miniboard__ghost {
+  fill: color-mix(in oklab, var(--c) 22%, transparent);
+  stroke: var(--c);
+  stroke-width: 1.6;
+  stroke-dasharray: 4 3;
+}
+
+.miniboard__bad {
+  fill: color-mix(in oklab, var(--accent) 16%, transparent);
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-dasharray: 4 3;
+}
+
+.miniboard__scar {
+  fill: var(--faint);
+  opacity: 0.55;
+}
+
+.miniboard__ash {
+  fill: color-mix(in oklab, var(--ink) 9%, transparent);
+}
+
+.miniboard__fog {
+  fill: color-mix(in oklab, var(--ink) 11%, var(--mb-bg));
+}
+
+.miniboard__mark {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.miniboard__mark--ok {
+  stroke: var(--seat-1-ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .miniboard[data-animate="true"] .miniboard__mark {
+    stroke-dasharray: 1 2;
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  .miniboard[data-animate="true"][data-inview="true"] .miniboard__mark {
+    animation: doodle-draw 1100ms var(--ease-out) both;
+    animation-delay: calc(400ms + var(--i, 0) * 260ms);
+  }
+}

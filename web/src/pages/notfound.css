@@ -1,0 +1,84 @@
+.nf {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 64px;
+  align-items: center;
+  padding-block: clamp(56px, 9vw, 140px);
+  min-height: calc(100dvh - var(--nav-h) - 120px);
+}
+
+.nf__copy {
+  display: grid;
+  gap: 24px;
+}
+
+.nf h1 {
+  font-size: clamp(3rem, 1.5rem + 5vw, 6.2rem);
+}
+
+.nf__board {
+  position: relative;
+  padding-top: 76px;
+}
+
+.nf__note {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.nf__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  padding: 14px;
+  border-radius: 20px;
+  background: #12100e;
+  max-width: 380px;
+  aspect-ratio: 1;
+}
+
+.nf__cell {
+  border-radius: 5px;
+  background: #1c1a16;
+  border: 0;
+  padding: 0;
+}
+
+.nf__cell--here {
+  background: var(--seat-0);
+  box-shadow: 0 0 18px color-mix(in oklab, var(--seat-0) 70%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nf__cell--here {
+    animation: pop 480ms var(--ease-spring);
+  }
+}
+
+.nf__cell--can {
+  background: transparent;
+  outline: 1.5px dashed color-mix(in oklab, var(--seat-0) 60%, transparent);
+  outline-offset: -3px;
+  cursor: pointer;
+  transition: background-color var(--dur-fast);
+}
+
+.nf__cell--can:hover,
+.nf__cell--can:focus-visible {
+  background: color-mix(in oklab, var(--seat-0) 30%, transparent);
+}
+
+@media (max-width: 860px) {
+  .nf {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+  }
+}
+
+.nf__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}

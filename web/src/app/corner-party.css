@@ -1,0 +1,48 @@
+.corner-party {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.corner-party__bit {
+  position: absolute;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 2px;
+  opacity: 0;
+  animation: corner-burst 1500ms var(--ease-out) var(--delay) forwards;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.corner-party__bit--c0 {
+  left: -10px;
+  top: -10px;
+}
+.corner-party__bit--c1 {
+  right: -10px;
+  top: -10px;
+}
+.corner-party__bit--c2 {
+  right: -10px;
+  bottom: -10px;
+}
+.corner-party__bit--c3 {
+  left: -10px;
+  bottom: -10px;
+}
+
+@keyframes corner-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(0.6);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(1);
+  }
+}
