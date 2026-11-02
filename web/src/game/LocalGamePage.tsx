@@ -153,8 +153,8 @@ function LocalGame() {
     return (
       <div className="game paper" style={{ placeItems: "center", display: "grid" }}>
         <div className="g-sheet">
-          <p className="g-hand">well, this is awkward</p>
-          <h2>The board wouldn't load.</h2>
+          <p className="g-hand">something went wrong</p>
+          <h2>The game couldn't load.</h2>
           <p>{failure}</p>
           <button className="g-btn-ghost" onClick={() => navigate("/play")}>
             Back to the lobby
@@ -164,7 +164,7 @@ function LocalGame() {
     );
   }
   if (!match || !snap || !kit) {
-    return <div className="game paper g-board-loading">sharpening pencils…</div>;
+    return <div className="game paper g-board-loading">loading the board…</div>;
   }
 
   return (
