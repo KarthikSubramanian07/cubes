@@ -136,7 +136,7 @@ By hand, from a machine logged in with `wrangler login`:
 
 ```sh
 cd crates/rooms && npx wrangler deploy          # the Rust Durable Object
-cd ../../web && bun run wasm && bunx vite build
+cd ../../web && bun run wasm && bun run build:site
 npx wrangler pages deploy dist --project-name playcubes --branch main
 ```
 
