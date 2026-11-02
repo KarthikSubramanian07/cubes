@@ -1,0 +1,11 @@
+[package]
+name = "cubes-engine"
+description = "Rules, move generation, fog of war and AI for cubes, a territory game of corners."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
