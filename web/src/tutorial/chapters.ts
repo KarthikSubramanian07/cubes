@@ -78,7 +78,7 @@ const core: Chapter = {
     return [
       { id: "core", cell: at(d, 3, 4), text: "your Core.\nstart here", dir: "s", reach: 1.5 },
       { id: "hook", cell: at(d, 4, 3), text: "hook on here,\nat a corner", dir: "n", reach: 1.3, mark: "circle" },
-      { id: "tide", cell: at(d, 1, 1), text: "Tide, the other player.\nasleep for now. enjoy it", dir: "s", tone: "seat-1", reach: 1 },
+      { id: "tide", cell: at(d, 1, 1), text: "Tide, your rival.\nasleep, for now", dir: "s", tone: "seat-1", reach: 1 },
     ];
   },
   success: "That's a link.",
