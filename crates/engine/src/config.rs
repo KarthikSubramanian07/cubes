@@ -265,12 +265,33 @@ pub fn core_cells(cfg: &GameConfig, lat: &Lattice) -> Vec<usize> {
         .collect()
 }
 
-/// Node cells, placed with rotational symmetry about the vertical axis so
-/// every seat sees the same map. Avoids Cores and cells next to them.
+/// Node cells, placed with rotational symmetry so every seat sees the same
+/// map. Nodes keep two cells clear of every Core; on boards too small for
+/// that (an 8×8 Stack floor with four Cores leaves no such cell), they keep
+/// one cell clear instead.
 pub fn node_cells(cfg: &GameConfig, lat: &Lattice, cores: &[usize], seed: u64) -> Vec<usize> {
     if !cfg.arena || cfg.nodes == 0 {
         return Vec::new();
     }
+    let wide = place_nodes(cfg, lat, cores, seed, 2);
+    if wide.len() >= cfg.nodes as usize {
+        return wide;
+    }
+    let close = place_nodes(cfg, lat, cores, seed, 1);
+    if close.len() > wide.len() {
+        close
+    } else {
+        wide
+    }
+}
+
+fn place_nodes(
+    cfg: &GameConfig,
+    lat: &Lattice,
+    cores: &[usize],
+    seed: u64,
+    keep_off: i32,
+) -> Vec<usize> {
     let mut rng = Rng::new(seed ^ 0x6e6f_6465_7321);
     let w = lat.w;
     let fold = if cfg.seats == 2 { 2 } else { 4 };
@@ -305,7 +326,7 @@ pub fn node_cells(cfg: &GameConfig, lat: &Lattice, cores: &[usize], seed: u64) -
                 ok = false;
                 break;
             };
-            let near_core = cores.iter().any(|&c| lat.chebyshev(c, i) <= 2);
+            let near_core = cores.iter().any(|&c| lat.chebyshev(c, i) <= keep_off);
             if !lat.playable[i] || near_core || out.contains(&i) || cells.contains(&i) {
                 ok = false;
                 break;
@@ -385,6 +406,18 @@ mod tests {
             let (x, y, z) = lat.coords(n);
             let r = lat.index(lat.w - 1 - y, x, z).unwrap();
             assert!(a.contains(&r), "node {n} has no rotated twin");
+        }
+    }
+
+    #[test]
+    fn every_arena_preset_gets_its_nodes() {
+        for name in GameConfig::PRESETS {
+            for seats in 2..=4 {
+                let cfg = GameConfig::preset(name, seats).unwrap();
+                let lat = Lattice::new(cfg.dims, cfg.shape, cfg.topology);
+                let n = node_cells(&cfg, &lat, &core_cells(&cfg, &lat), 7).len();
+                assert_eq!(n, cfg.nodes as usize, "{name}/{seats}");
+            }
         }
     }
 
