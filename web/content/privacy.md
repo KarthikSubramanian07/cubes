@@ -9,7 +9,10 @@ cubes keeps a few small values in your browser's local storage so the game remem
 - the display name you typed, so you don't have to type it again;
 - a random player id and a per-room seat token, so a dropped connection gets your seat back and nobody else can take it;
 - your preferences: light or dark theme, Night or Paper board, sound volume and music;
-- your tutorial progress.
+- your tutorial progress;
+- your record against the bots and your daily board results (wins, losses, scores and a tiny picture of each daily board).
+
+Your record and daily results never leave your device.
 
 The site also caches its own files on your device so that games against bots work offline. You can remove all of it at any time by clearing this site's data in your browser settings.
 

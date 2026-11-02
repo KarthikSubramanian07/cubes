@@ -16,6 +16,12 @@ Play alone against bots at three levels, chosen per seat:
 
 The bots run on your own device, so games against them also work offline after your first visit.
 
+## The daily board
+
+Every day (midnight UTC) there's one new board, the same for everyone, against Flare. The mode rotates through the week: Duel on Mondays, Fog on Tuesdays, Storm, Torus, Pure, Duel again, and Stack in 3D on Sundays. Your first finished game counts, there's no undo, and you can share the result as a small emoji grid. Play it at [playcubes.pages.dev/daily](https://playcubes.pages.dev/daily).
+
+After any game against bots, you can watch a replay of the whole game move by move, and the play page keeps your record against each bot (stored only in your browser).
+
 ## Pass and play
 
 Two to four people share one screen and take turns. In Fog games the screen asks you to pass the device between turns so nobody peeks.

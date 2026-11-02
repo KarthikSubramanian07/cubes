@@ -16,11 +16,30 @@ import { SoundProvider, useSound } from "@/audio";
 import type { GameSetup } from "@/app/setup";
 import { LocalMatch, type LocalSeat, type MatchSnapshot } from "./LocalMatch";
 import { GameScreen } from "./GameScreen";
+import { addDaily, addResult, dailyStreak, loadStats, saveStats, verdict } from "@/app/stats";
+import { DAILY_OPPONENT, DAILY_TITLES, dailyNumber, dailyPreset, dailySeed, isDay, shareGrid, shareText, todayUTC } from "@/app/daily";
+import { soloResult } from "./result";
 
 export interface LocalSetup {
   preset: PresetName;
   config?: GameConfig;
   seats: LocalSeat[];
+  /** Fixed seed (the daily board); otherwise random. */
+  seed?: number;
+  /** The daily board's date, "YYYY-MM-DD". */
+  daily?: string;
+}
+
+/** /daily (today) or /daily?day=2026-11-02 (an older board, for practice). */
+export function dailySetup(search: string, today = todayUTC()): LocalSetup {
+  const asked = new URLSearchParams(search).get("day");
+  const day = isDay(asked) && asked <= today ? asked : today;
+  return {
+    preset: dailyPreset(day),
+    seats: [{ kind: "human", name: "You" }, { kind: "bot", level: DAILY_OPPONENT.level, name: DAILY_OPPONENT.name }],
+    seed: dailySeed(day),
+    daily: day,
+  };
 }
 
 const PRESETS: PresetName[] = ["plane", "duel", "pure", "fog", "storm", "torus", "teams", "stack", "orbit"];
@@ -99,11 +118,13 @@ function LocalGame() {
   const location = useLocation();
   const navigate = useNavigate();
   const sound = useSound();
+  const isDaily = location.pathname.replace(/\/$/, "") === "/daily";
   const setup = useMemo<LocalSetup>(() => {
+    if (isDaily) return dailySetup(location.search);
     const given = (location.state as { setup?: GameSetup | LocalSetup } | null)?.setup;
     if (given && "bots" in given) return fromHubSetup(given);
     return given ?? setupFromQuery(location.search);
-  }, [location.state, location.search]);
+  }, [location.state, location.search, isDaily]);
   const [ready, setReady] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [match, setMatch] = useState<LocalMatch | null>(null);
@@ -128,7 +149,7 @@ function LocalGame() {
       setFailure(err);
       return;
     }
-    const m = new LocalMatch({ config, seats: padSeats(setup.seats, config.seats) });
+    const m = new LocalMatch({ config, seats: padSeats(setup.seats, config.seats), seed: setup.seed });
     setKit(getKit(config.kit));
     setMatch(m);
     // A new setup (or StrictMode's double run) must not leave the old match's
@@ -145,9 +166,50 @@ function LocalGame() {
   }, [match]);
   useEffect(() => () => current.current?.dispose(), []);
 
+  // The daily counts once: the first game that finishes on today's board.
+  const today = useMemo(() => todayUTC(), []);
+  const [dailyDone] = useState(() => (setup.daily ? !!loadStats().daily[setup.daily] : false));
+  const counts = !!setup.daily && setup.daily === today && !dailyDone;
+  const onDailyBoard = !!setup.daily && (match ? match.isSeed(setup.seed!) : true);
+  const title = setup.daily
+    ? `Daily #${dailyNumber(setup.daily)} · ${DAILY_TITLES[setup.preset] ?? PRESET_TITLES[setup.preset]}${onDailyBoard && counts ? "" : " · practice"}`
+    : PRESET_TITLES[setup.preset];
+  const [share, setShare] = useState<string | null>(null);
+
   useEffect(() => {
-    document.title = `${PRESET_TITLES[setup.preset]} · cubes`;
-  }, [setup.preset]);
+    document.title = `${title} · cubes`;
+  }, [title]);
+
+  // Solo games against bots go on your record, once per match.
+  const recorded = useRef<LocalMatch | null>(null);
+  const [resultNote, setResultNote] = useState<string | null>(null);
+  useEffect(() => {
+    if (!match || !snap || snap !== match.getSnapshot() || snap.view.phase !== "over" || recorded.current === match) return;
+    recorded.current = match;
+    const r = soloResult(snap);
+    if (!r) return;
+    let stats = addResult(loadStats(), r);
+    let note = verdict(stats, r.level, LEVEL_NAMES[r.level]);
+    if (setup.daily && match.isSeed(setup.seed!)) {
+      const v = snap.view;
+      const opponent = (v.scores ?? v.seats.map((x) => x.score ?? 0))[1] ?? 0;
+      const result = { outcome: r.outcome, score: r.score, opponent, grid: shareGrid(v, 0) };
+      if (counts) {
+        stats = addDaily(stats, setup.daily, result);
+        const streak = dailyStreak(stats, today);
+        note = streak > 1 ? `${streak} dailies in a row. See you tomorrow.` : "That's today's daily done. New board at midnight UTC.";
+      }
+      const kept = stats.daily[setup.daily] ?? result;
+      setShare(shareText({ day: setup.daily, ...kept }, window.location.origin));
+      if (!counts) note = dailyDone ? "Practice round. Your first try today is the one that counts." : "Practice round on an older board.";
+    }
+    saveStats(stats);
+    setResultNote(note);
+  }, [match, snap]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setResultNote(null);
+    setShare(null);
+  }, [match]);
 
   if (failure) {
     return (
@@ -169,7 +231,7 @@ function LocalGame() {
 
   return (
     <GameScreen
-      title={PRESET_TITLES[setup.preset]}
+      title={title}
       view={snap.view}
       kit={kit}
       seat={snap.perspective}
@@ -180,12 +242,16 @@ function LocalGame() {
       onAcceptHandoff={() => match.acceptHandoff()}
       legal={(leap) => match.legal(leap)}
       submit={async (a) => match.act(a)}
-      undoable={snap.undoable}
+      undoable={snap.undoable && !onDailyBoard}
       onUndo={() => match.undo()}
       onRematch={() => {
         setMatch(match.rematch());
       }}
       onResign={() => match.resign()}
+      frames={() => match.frames()}
+      resultNote={resultNote}
+      shareText={share}
+      rematchLabel={setup.daily ? "Practice round" : undefined}
       onLeave={() => navigate("/play")}
       sound={sound}
     />
