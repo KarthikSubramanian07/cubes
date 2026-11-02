@@ -122,7 +122,7 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
   const hint = useMemo(() => {
     if (!canAct) return null;
     if (mode === "shatter") return "pick an enemy cell to shatter";
-    if (piece === null) return playable.size ? "pick a shard" : "no shard fits; try a surge";
+    if (piece === null) return playable.size ? "your move · pick a shard" : "no shard fits. try a surge";
     if (ghost && !ghost.valid) return "corners only. never along a face";
     return null;
   }, [canAct, mode, piece, playable, ghost]);
