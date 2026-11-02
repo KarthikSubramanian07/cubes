@@ -5,6 +5,8 @@
   "type": "module",
   "description": "cubes: a territory game of light and corners. Web client.",
   "scripts": {
+    "wasm": "wasm-pack build ../crates/wasm --target web --release --out-dir ../../web/src/wasm/pkg --no-pack",
+    "wasm:dev": "wasm-pack build ../crates/wasm --target web --dev --out-dir ../../web/src/wasm/pkg --no-pack",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
