@@ -611,6 +611,10 @@ function Help({ three, arena, fog, onClose }: { three: boolean; arena: boolean; 
               <dd>flip</dd>
             </>
           )}
+          <dt>Arrows{three ? " · PgUp/PgDn" : ""}</dt>
+          <dd>move the cursor{three ? " · up and down a layer" : ""}</dd>
+          <dt>N</dt>
+          <dd>show the next spot the shard fits (Shift+N goes back)</dd>
           <dt>Enter</dt>
           <dd>place the ghost</dd>
           <dt>Esc</dt>

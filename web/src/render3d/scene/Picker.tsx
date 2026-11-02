@@ -29,7 +29,6 @@ export function Picker({ view, L, layerCut, shared, onHover, onSelect }: PickerP
   const boxGeo = useDisposable(() => new BoxGeometry(1, 1, 1), []);
   const boxes = useRef<InstancedMesh>(null);
   const boxCells = useRef<number[]>([]);
-  const last = useRef<HoverTarget | null>(null);
   const down = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
   const pendingOut = useRef(false);
   const cap = L.is2D ? 1 : L.w * L.h * L.d;
@@ -70,8 +69,8 @@ export function Picker({ view, L, layerCut, shared, onHover, onSelect }: PickerP
     };
     const targetOf = (e: ThreeEvent<PointerEvent>) => resolveHover(L, view.cells, hitOf(e), { layerCut });
     const hover = (t: HoverTarget | null) => {
-      if (!sameTarget(t, last.current)) {
-        last.current = t;
+      if (!sameTarget(t, shared.hover)) {
+        shared.hover = t;
         onHover(t);
       }
     };

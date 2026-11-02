@@ -83,3 +83,59 @@ export function sameTarget(a: HoverTarget | null, b: HoverTarget | null): boolea
   if (!an || !bn) return an === bn;
   return an[0] === bn[0] && an[1] === bn[1] && an[2] === bn[2];
 }
+
+export type NudgeKey = "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight" | "PageUp" | "PageDown";
+
+export interface NudgeOptions {
+  /** Camera forward and right, projected onto the floor, as world [x, z]. */
+  forward: [number, number];
+  right: [number, number];
+  gravity: boolean;
+  layerCut?: number | null;
+}
+
+/** World floor direction to a board step along the dominant axis (world X = board x, world Z = board y). */
+function floorStep(d: [number, number]): [number, number] {
+  return Math.abs(d[0]) >= Math.abs(d[1]) ? [Math.sign(d[0]) || 1, 0] : [0, Math.sign(d[1]) || 1];
+}
+
+/** The empty cell a shard would rest on in column (x, y): just above the highest solid cell. */
+export function columnTop(L: BoardLayout, cells: ArrayLike<number>, x: number, y: number, cut: number | null): number | null {
+  const top = cut === null ? L.d - 1 : Math.min(cut, L.d - 1);
+  let z = 0;
+  for (let k = 0; k <= top; k++) {
+    const o = cells[indexOf(L, x, y, k)];
+    if (o !== OWNER.EMPTY && o !== undefined) z = k + 1;
+  }
+  return z > top ? null : z;
+}
+
+/**
+ * Move a keyboard cursor one cell. Arrows follow the camera (up is "away
+ * from me"), PageUp/PageDown change layer in 3D. On gravity boards a
+ * sideways step lands on top of the new column.
+ */
+export function nudge(L: BoardLayout, cells: ArrayLike<number>, from: number, key: NudgeKey, o: NudgeOptions): HoverTarget | null {
+  const cut = o.layerCut ?? null;
+  let [x, y, z] = coordsOf(L, from);
+  if (key === "PageUp" || key === "PageDown") {
+    if (L.is2D) return null;
+    z += key === "PageUp" ? 1 : -1;
+  } else {
+    const dir: [number, number] =
+      key === "ArrowUp" ? o.forward : key === "ArrowDown" ? [-o.forward[0], -o.forward[1]] : key === "ArrowRight" ? o.right : [-o.right[0], -o.right[1]];
+    const [dx, dy] = floorStep(dir);
+    x += dx;
+    y += dy;
+    if (!inBounds(L, x, y, 0)) return null;
+    if (!L.is2D && o.gravity) {
+      const top = columnTop(L, cells, x, y, cut);
+      if (top === null) return null;
+      z = top;
+    }
+  }
+  if (!inBounds(L, x, y, z) || (cut !== null && z > cut)) return null;
+  const cell = indexOf(L, x, y, z);
+  if (cells[cell] === OWNER.VOID) return null;
+  return L.is2D ? { cell } : { cell, normal: [0, 0, 1] };
+}
