@@ -21,9 +21,9 @@ export interface PlayHubProps {
 }
 
 const KINDS: { kind: SetupKind; title: string; text: string; note: string }[] = [
-  { kind: "online", title: "Online room", text: "Make a room, send the link. Friends join from any browser.", note: "best with snacks" },
-  { kind: "bots", title: "Versus bots", text: "Pick a level for each seat. Nobody judges you for choosing Ember.", note: "Nova bites" },
-  { kind: "local", title: "Pass & play", text: "One screen, passed around the table. Hot-seat, old school.", note: "no peeking" },
+  { kind: "online", title: "Online room", text: "Get a link to send to friends. They join from any browser, no install.", note: "2–4 players" },
+  { kind: "bots", title: "Versus bots", text: "Play alone against the computer. Choose easy, medium or hard for each seat.", note: "start in seconds" },
+  { kind: "local", title: "Pass & play", text: "Share one screen and take turns. Good for a table or a couch.", note: "one device" },
 ];
 
 function KindIcon({ kind }: { kind: SetupKind }) {
@@ -200,7 +200,7 @@ export function PlayHub({ onStart, onJoin, initialKind = "online", initialName =
           title="Pick a mode"
           aside={
             <HandNote className="hub__step-note annot" tilt={-4} size="sm" arrow="down-left">
-              new here? Plane or Duel.
+              new here? try Duel
             </HandNote>
           }
         >
@@ -433,7 +433,7 @@ export function PlayHub({ onStart, onJoin, initialKind = "online", initialName =
             {startLabel}
           </Button>
           <HandNote className="summary__note annot" tilt={-5} arrow="up-left" size="sm">
-            this is the button
+            ready? start here
           </HandNote>
         </div>
       </aside>

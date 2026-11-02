@@ -2,7 +2,6 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { useDocumentMeta } from "@/app/meta";
 import { makeRoomCode } from "@/app/roomCode";
 import { setupPath, type GameSetup, type SetupKind } from "@/app/setup";
-import { HandNote } from "@/ui/HandNote";
 import { PlayHub } from "./play/PlayHub";
 
 const NAME_KEY = "cubes:name";
@@ -54,15 +53,12 @@ export function Component() {
       <header className="play__head">
         <p className="eyebrow">Play</p>
         <h1>
-          Pull up a <em>chair</em>.
+          Start a <em>game</em>.
         </h1>
-        <p className="lede">Three choices and you're in. Everything past step three is optional, and most of it is for people who have already lost a few games.</p>
+        <p className="lede">Choose how you're playing, pick a mode, and press start. Everything else has sensible defaults.</p>
         <p className="muted">
           New here? <Link to="/learn">Learn in three minutes</Link> first.
         </p>
-        <HandNote className="play__head-note annot" tilt={-4} arrow="down-left" delay={300}>
-          step three is optional-ish
-        </HandNote>
       </header>
       <PlayHub onStart={onStart} onJoin={onJoin} initialKind={initialKind} initialName={storedName()} />
     </div>

@@ -41,8 +41,9 @@ function Hero() {
             .
           </h1>
           <p className="lede hero__lede rise" style={{ ["--delay" as string]: "120ms" }}>
-            <strong>cubes</strong> is a territory game for two to four people. Place glowing shards, link each one to your own light at a corner, never
-            along a face, and hold the most of the board when nobody can move. It runs in a browser tab. Send a link; that's the whole setup.
+            <strong>cubes</strong> is a strategy game for two to four players. Take turns placing pieces on a shared board. Each new piece must touch
+            one of your own at a corner, never along a side. When nobody can move, whoever covers the most squares wins. It runs in your browser: send
+            friends a link, or play against bots.
           </p>
           <div className="hero__cta rise" style={{ ["--delay" as string]: "220ms" }}>
             <Button to="/play" size="lg" iconRight={<ArrowRight />}>
@@ -52,7 +53,7 @@ function Hero() {
               Make a room
             </Button>
             <HandNote className="hero__cta-note annot" arrow="left" tilt={-5} size="sm" tone="muted" delay={1500}>
-              no account. we checked.
+              free, no sign-up
             </HandNote>
           </div>
           <p className="hero__learn rise" style={{ ["--delay" as string]: "270ms" }}>
@@ -72,15 +73,15 @@ function Hero() {
               <dd>2D + 3D</dd>
             </div>
             <div>
-              <dt>Costs</dt>
-              <dd>Nothing</dd>
+              <dt>Price</dt>
+              <dd>Free</dd>
             </div>
           </dl>
         </div>
         <div className="hero__visual">
           <HeroScene />
           <HandNote className="hero__visual-note annot" arrow="up-left" tilt={-3} delay={1800}>
-            each spark is a corner touch.{"\n"}that's the only way to grow.
+            each flash is a corner touch:{"\n"}the only way to grow
           </HandNote>
         </div>
       </div>
@@ -96,14 +97,13 @@ function HowItWorks() {
     <section className="section how" id="how" aria-labelledby="how-title">
       <div className="wrap">
         <header className="section-head">
-          <p className="eyebrow">How it works</p>
+          <p className="eyebrow">How to play</p>
           <h2 id="how-title">
-            The rules, in three <em>corners</em>.
+            Three rules. That's <em>it</em>.
           </h2>
-          <p className="lede">You could read the full rules in four minutes. Or read these three panels, play one game, and never need them again.</p>
-          <HandNote className="how__margin annot" tilt={-4} arrow="down-left" delay={300}>
-            honestly, panel two is the game
-          </HandNote>
+          <p className="lede">
+            Read these three, or <Link to="/learn">learn by playing</Link> in about three minutes. Everything else (power-ups, fog, 3D) builds on them.
+          </p>
         </header>
         <ol className="how__grid">
           <Reveal as="li" className="how__step">
@@ -112,7 +112,7 @@ function HowItWorks() {
                 cols={6}
                 rows={5}
                 cell={30}
-                label="A Clay core in the top-left corner, with a first shard touching it diagonally."
+                label="A Clay Core in the top-left corner, with a first piece touching it diagonally."
                 cells={[
                   { x: 1, y: 1, seat: CLAY, kind: "core" },
                   { x: 2, y: 2, seat: CLAY, kind: "ghost" },
@@ -128,7 +128,7 @@ function HowItWorks() {
             </div>
             <span className="how__num num">01</span>
             <h3>Start at your Core.</h3>
-            <p>Every seat begins with one glowing Core on the board. Your first shard has to touch it, but only diagonally, corner to corner.</p>
+            <p>Every player starts with one glowing square on the board, their Core. Your first piece must touch it diagonally, corner to corner.</p>
           </Reveal>
           <Reveal as="li" className="how__step" delay={120}>
             <div className="how__fig">
@@ -136,7 +136,7 @@ function HowItWorks() {
                 cols={6}
                 rows={5}
                 cell={30}
-                label="Legal: a new Clay shard touches an existing Clay cell only at a corner. A Tide cell beside it doesn't matter."
+                label="Allowed: a new Clay piece touches an existing Clay square only at a corner. A Tide square beside it doesn't matter."
                 cells={[
                   { x: 0, y: 0, seat: CLAY, kind: "core" },
                   { x: 1, y: 1, seat: CLAY },
@@ -153,10 +153,10 @@ function HowItWorks() {
               <Doodle variant="check" className="how__check" color="var(--seat-1-ink)" delay={900} />
             </div>
             <span className="how__num num">02</span>
-            <h3>Link at a corner.</h3>
+            <h3>Grow from your corners.</h3>
             <p>
-              Each new shard must touch your own light at <Highlight>at least one corner</Highlight>. Touching other players is always fine. Squeeze in
-              next to them; it's encouraged.
+              Each new piece must touch one of your own pieces at <Highlight>at least one corner</Highlight>. Touching other players' pieces is always
+              fine, and squeezing in next to them is how you block them.
             </p>
           </Reveal>
           <Reveal as="li" className="how__step" delay={240}>
@@ -165,7 +165,7 @@ function HowItWorks() {
                 cols={6}
                 rows={5}
                 cell={30}
-                label="Illegal: the new shard shares a face with an existing Clay cell."
+                label="Not allowed: the new piece shares a side with an existing Clay square."
                 cells={[
                   { x: 0, y: 0, seat: CLAY, kind: "core" },
                   { x: 1, y: 1, seat: CLAY },
@@ -179,19 +179,19 @@ function HowItWorks() {
               />
               <Doodle variant="cross" className="how__cross" delay={900} />
               <HandNote className="how__fig-note how__fig-note--3 annot" tilt={-5} size="sm" delay={1200}>
-                nope. that's a face.
+                sides touch: not allowed
               </HandNote>
             </div>
             <span className="how__num num">03</span>
-            <h3>Never along a face.</h3>
-            <p>A shard may never share an edge with your own cells. So your territory grows as a lattice of diagonals, and gaps appear that someone else will fill.</p>
+            <h3>Never side by side.</h3>
+            <p>Your pieces can never touch each other along a side. So your colour spreads in diagonals, leaving gaps that the other players race to fill.</p>
           </Reveal>
         </ol>
         <p className="how__more">
           <Button to="/rules" variant="quiet" iconRight={<ArrowRight />}>
             Read the full rules
           </Button>
-          <span className="muted">Scoring, surges, fog, storm, gravity, the lot.</span>
+          <span className="muted">Scoring, power-ups and every mode.</span>
         </p>
       </div>
     </section>
@@ -205,11 +205,11 @@ function Modes() {
         <header className="section-head">
           <p className="eyebrow">Modes</p>
           <h2 id="modes-title">
-            Nine ways to run out of <em>room</em>.
+            Nine ways to <em>play</em>.
           </h2>
-          <p className="lede">Same rule everywhere. Change the board, take away your sight, set the edges on fire, add a third dimension.</p>
+          <p className="lede">The same three rules everywhere. Modes change the board, hide parts of it, shrink it, or add a third dimension.</p>
           <HandNote className="modes__margin annot" tilt={-3} arrow="down" delay={300}>
-            start with Duel. trust us.
+            new here? start with Duel
           </HandNote>
         </header>
         <ul className="modes__grid">
@@ -250,10 +250,10 @@ function Modes() {
 }
 
 const SURGES: { name: SurgeName; label: string; cost: number; text: string; foot: string }[] = [
-  { name: "spark", label: "Spark", cost: 1, text: "Place a single cell instead of a shard. Small, cheap, and exactly the size of that gap.", foot: "is your placement" },
-  { name: "leap", label: "Leap", cost: 2, text: "This placement only needs to be within two cells of your light, no corner needed. Still no faces.", foot: "is your placement" },
-  { name: "shatter", label: "Shatter", cost: 3, text: "Destroy one opponent cell. It becomes a scar: dead, unscorable, and very much their problem now.", foot: "then place as usual" },
-  { name: "scan", label: "Scan", cost: 1, text: "Fog modes only. See the whole board until the end of your next turn. Bring snacks.", foot: "then place as usual" },
+  { name: "spark", label: "Spark", cost: 1, text: "Place a single square instead of a piece. Perfect for filling a one-square gap.", foot: "uses your turn" },
+  { name: "leap", label: "Leap", cost: 2, text: "Your piece can go up to two squares away from your colour, without a corner touch. Still never side by side.", foot: "uses your turn" },
+  { name: "shatter", label: "Shatter", cost: 3, text: "Destroy one opponent square. It turns into a dead block nobody can use or score.", foot: "then take your turn" },
+  { name: "scan", label: "Scan", cost: 1, text: "Fog modes only. See the whole board until the end of your next turn.", foot: "then take your turn" },
 ];
 
 function Surges() {
@@ -261,13 +261,13 @@ function Surges() {
     <section className="section surges" id="surges" aria-labelledby="surges-title">
       <div className="wrap surges__grid">
         <header className="section-head surges__head">
-          <p className="eyebrow">The arena layer</p>
+          <p className="eyebrow">Power-ups</p>
           <h2 id="surges-title">
-            Nodes give charge. Charge buys <em>trouble</em>.
+            Grab nodes, earn <em>charge</em>.
           </h2>
           <p className="lede">
-            Neutral nodes are scattered with rotational symmetry, so every seat gets the same map. Cover one and you bank a charge, up to nine. Spend it
-            on surges. Pure mode switches all of this off, for people who own a pipe.
+            Glowing nodes are scattered evenly around the board, so nobody gets a better map. Cover one with a piece to earn one charge (up to nine),
+            then spend charge on these power-ups during your turn. Pure mode turns them off.
           </p>
           <div className="surges__charge" aria-label="A charge meter, five of nine">
             {Array.from({ length: 9 }, (_, i) => (
@@ -296,7 +296,7 @@ function Surges() {
           ))}
           <li className="surges__note annot" aria-hidden="true">
             <HandNote tilt={-4} arrow="up" delay={400}>
-              Leap + Spark = 3 charge.{"\n"}you'll want that one.
+              Leap and Spark combine:{"\n"}3 charge, one square, anywhere close
             </HandNote>
           </li>
         </ul>
@@ -305,83 +305,18 @@ function Surges() {
   );
 }
 
-function Built() {
-  return (
-    <section className="section built theme-night" id="built" aria-labelledby="built-title">
-      <div className="wrap">
-        <header className="section-head">
-          <p className="eyebrow">How it's built</p>
-          <h2 id="built-title">
-            One rulebook, compiled <em>twice</em>.
-          </h2>
-          <p className="lede">The boring, careful parts. You don't need to know any of this to play, but somebody always asks.</p>
-        </header>
-        <div className="built__diagram" aria-hidden="true">
-          <div className="built__box">
-            <span className="mono">your browser</span>
-            <strong>React + three.js</strong>
-          </div>
-          <div className="built__wire">
-            <span className="mono">postMessage</span>
-          </div>
-          <div className="built__box built__box--hot">
-            <span className="mono">web worker</span>
-            <strong>engine.wasm</strong>
-          </div>
-          <div className="built__wire built__wire--long">
-            <span className="mono">wss · same origin</span>
-          </div>
-          <div className="built__box built__box--hot">
-            <span className="mono">durable object</span>
-            <strong>room ABCDE</strong>
-          </div>
-        </div>
-        <div className="built__grid">
-          <article>
-            <p className="built__path mono">crates/engine</p>
-            <h3>The rules are Rust.</h3>
-            <p>
-              Geometry, the kit, move generation, fog, scoring and the bots live in one crate with no platform dependencies. It compiles to WebAssembly and
-              runs in a Web Worker, so pass-and-play and bot games never touch a server.
-            </p>
-          </article>
-          <article>
-            <p className="built__path mono">crates/rooms</p>
-            <h3>Rooms are actors.</h3>
-            <p>
-              Each online room is one Cloudflare Durable Object, also Rust. It runs the same engine, validates every move, and sends each seat its own
-              redacted view, so fog of war is enforced by the server rather than by good manners.
-            </p>
-          </article>
-          <article>
-            <p className="built__path mono">web/src/render3d</p>
-            <h3>The board is three.js.</h3>
-            <p>
-              Glassy cubes, emissive cores, selective bloom, fog as drifting haze. This page uses none of it, to stay fast; the renderer loads when you sit
-              down to play.
-            </p>
-          </article>
-        </div>
-        <HandNote className="built__note annot" tilt={-3} arrow="up-left" tone="accent" delay={300}>
-          yes, the bots run the same engine.{"\n"}no, they can't cheat. we asked.
-        </HandNote>
-      </div>
-    </section>
-  );
-}
-
 const FAQ: { q: string; a: React.ReactNode }[] = [
-  { q: "Is it free?", a: "Yes. No account, no ads, no premium shards. It's a hobby project with a very small hosting bill." },
+  { q: "Is it free?", a: "Yes. No account, no ads, nothing to buy. It's an open-source project." },
   { q: "Do my friends need to install anything?", a: "No. Make a room, send the link, they open it in a browser tab on whatever they're holding. Phones work." },
-  { q: "How long is a game?", a: "A Duel is about ten minutes. Four players on the full Plane board, twenty to thirty, depending on how long Pollen spends staring at the tray." },
+  { q: "How long is a game?", a: "A Duel takes about ten minutes. Four players on the full board take twenty to thirty." },
   {
     q: "What happens when I can't move?",
-    a: "You go dark: you're out for the rest of the game, but your cells still count. Surges you can afford count as moves, so check your charge before you sulk.",
+    a: "You're out for the rest of the game, but everything you placed still counts. If you have charge, a power-up might still give you a move, so the game checks that first.",
   },
-  { q: "Can I play alone?", a: "Yes, against bots. Ember is gentle, Flare is tidy, Nova runs a tree search and doesn't do mercy. You can mix levels per seat." },
+  { q: "Can I play alone?", a: "Yes, against bots, at three levels: Ember (easy), Flare (medium) and Nova (hard). You can mix levels in one game." },
   {
     q: "What does “corner” mean in 3D?",
-    a: "In Stack and Orbit, cubes link when they share an edge or a vertex but not a face. Same idea, more directions to be wrong in.",
+    a: "In the 3D modes, your cubes may touch at an edge or a corner point, but never with a whole face. Same rule, more directions.",
   },
   {
     q: "Can people cheat online?",
@@ -396,11 +331,8 @@ function Faq() {
         <header className="section-head">
           <p className="eyebrow">FAQ</p>
           <h2 id="faq-title">
-            Questions, <em>asked</em>.
+            Good <em>questions</em>.
           </h2>
-          <HandNote className="faq__note annot" tilt={-4} delay={300}>
-            frequently is a strong word
-          </HandNote>
         </header>
         <div className="faq__list">
           {FAQ.map((f) => (
@@ -426,7 +358,7 @@ function Closer() {
     <section className="closer" aria-labelledby="closer-title">
       <div className="wrap closer__inner">
         <HandNote className="closer__note" tilt={-4} arrow="down-right" delay={200}>
-          go on then
+          ready when you are
         </HandNote>
         <h2 id="closer-title">
           Find a friend. Find a <em className="accent-italic">corner</em>.
@@ -436,7 +368,7 @@ function Closer() {
             Play now
           </Button>
           <Button to="/play" state={{ kind: "bots" }} size="lg" variant="ghost">
-            Practise against a bot
+            Play against a bot
           </Button>
         </div>
         <Doodle variant="star" className="closer__star annot" color="var(--seat-2)" delay={700} />
@@ -457,7 +389,6 @@ export function Component() {
       <HowItWorks />
       <Modes />
       <Surges />
-      <Built />
       <Faq />
       <Closer />
     </>
