@@ -43,6 +43,9 @@ Play it at **playcubes.pages.dev**.
 
 - **Nodes.** Neutral glowing cells scattered with rotational symmetry so every
   seat gets an identical map. Covering a node gives **+1 charge** (max 9).
+- **Second-seat charge.** In two-seat 2D arena games the second seat starts
+  with **2 charge** (1 on a torus) to offset moving second; 3D boards need
+  none. Measured in `docs/BALANCE.md`.
 - **Surges** (spend charge on your turn):
   | Surge | Cost | Effect | Ends turn? |
   |---|---|---|---|
@@ -64,8 +67,8 @@ Play it at **playcubes.pages.dev**.
 | **Storm** | 20×20 | arena, storm from round 6 every 3 rounds |
 | **Torus** | 18×18 wraps on both axes | arena |
 | **Teams** | 20×20, 4 seats, seats 0+2 vs 1+3 | arena, shared light |
-| **Stack** (3D) | 8×8×8 (6×6×6 for 2) | gravity, crowns, arena |
-| **Orbit** (3D) | 7×7×7 | no gravity, arena |
+| **Stack** (3D) | 8×8×8 (8×8×6 for 2) | gravity, crowns, arena |
+| **Orbit** (3D) | 7×7×7 (6×6×6 for 2) | no gravity, arena |
 
 Board shapes for 2D: `square`, `octagon` (cut corners), `cross`, `diamond`.
 

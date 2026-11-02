@@ -276,9 +276,9 @@ impl State {
             flags[c] |= F_NODE;
         }
         let seats = (0..cfg.seats)
-            .map(|_| SeatState {
+            .map(|s| SeatState {
                 pieces: vec![true; ctx.kit.pieces.len()],
-                charge: 0,
+                charge: if s == 1 { second_seat_charge(cfg) } else { 0 },
                 dark: false,
                 resigned: false,
             })
@@ -876,6 +876,24 @@ impl State {
     }
 }
 
+/// Moving second is a real disadvantage in two-seat 2D games: seat 0 reaches
+/// the nodes first. Self-play put it at about 17 points of win share on
+/// 14x14; charge in hand for the second seat brings it to zero within noise.
+/// 3D boards were already fair, and the torus needs less. See docs/BALANCE.md.
+pub const SECOND_SEAT_CHARGE: u8 = 2;
+pub const SECOND_SEAT_CHARGE_TORUS: u8 = 1;
+
+/// Charge the second seat starts with.
+pub fn second_seat_charge(cfg: &GameConfig) -> u8 {
+    if cfg.seats != 2 || !cfg.arena || cfg.dims[2] > 1 {
+        0
+    } else if cfg.topology == crate::geometry::Topology::Torus {
+        SECOND_SEAT_CHARGE_TORUS
+    } else {
+        SECOND_SEAT_CHARGE
+    }
+}
+
 fn supported(lat: &Lattice, board: &[u8], cells: &[u32]) -> bool {
     cells.iter().all(|&c| match lat.below(c as usize) {
         None => true,
@@ -1093,6 +1111,22 @@ mod tests {
             st.check_shatter(&c, 0, target),
             Err(RuleError::AlreadyShattered)
         );
+    }
+
+    #[test]
+    fn second_seat_starts_with_charge_only_in_two_seat_2d_arena_games() {
+        let charge = |name: &str, seats: u8| {
+            let c = ctx(name, seats);
+            let st = State::new(&c, 1);
+            st.seats.iter().map(|s| s.charge).collect::<Vec<_>>()
+        };
+        assert_eq!(charge("duel", 2), vec![0, SECOND_SEAT_CHARGE]);
+        assert_eq!(charge("torus", 2), vec![0, SECOND_SEAT_CHARGE_TORUS]);
+        assert_eq!(charge("fog", 2), vec![0, SECOND_SEAT_CHARGE]);
+        assert_eq!(charge("stack", 2), vec![0, 0]);
+        assert_eq!(charge("orbit", 2), vec![0, 0]);
+        assert_eq!(charge("pure", 2), vec![0, 0]);
+        assert_eq!(charge("plane", 4), vec![0, 0, 0, 0]);
     }
 
     #[test]
