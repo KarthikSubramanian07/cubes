@@ -1,5 +1,7 @@
 /* Sets the theme before first paint. The game route is always night. */
 (function () {
+  // Pre-rendered page text (for crawlers and no-JS readers) hides once JS runs.
+  document.documentElement.classList.add("js");
   try {
     var p = localStorage.getItem("cubes:theme");
     var dark = p === "dark" || (p !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
