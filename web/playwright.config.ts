@@ -4,7 +4,9 @@ const PORT = 5181;
 
 export default defineConfig({
   testDir: "./e2e",
-  // Generous: audio rendering is CPU-bound and CI runners (or busy laptops) vary a lot.
+  outputDir: "./test-results",
+  // Generous: audio rendering and WebGL in software are CPU-bound, and CI
+  // runners (or busy laptops) vary a lot.
   timeout: 180_000,
   expect: { timeout: 15_000 },
   fullyParallel: true,
@@ -18,7 +20,7 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: `bunx vite --port ${PORT} --strictPort --host 127.0.0.1`,
-    url: `http://127.0.0.1:${PORT}/sound-lab.html`,
+    url: `http://127.0.0.1:${PORT}/`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
