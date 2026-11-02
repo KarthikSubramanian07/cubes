@@ -12,3 +12,4 @@ pub mod config;
 pub mod geometry;
 pub mod pieces;
 pub mod rng;
+pub mod table;
