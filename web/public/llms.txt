@@ -1,0 +1,37 @@
+# cubes
+
+> cubes is a free, open-source online territory strategy game for 2 to 4 players that runs in any web browser, with no install and no account. Players place polyomino shards (2D) or polycube shards (3D) on a shared board; each new shard must touch the player's own pieces at a corner and never along a side. It has online rooms shared by link, three levels of bots, pass-and-play, fog of war and 3D modes.
+
+Every page on this site is also available as Markdown: send `Accept: text/markdown` to any page URL, or fetch the `/md/*.md` links below. `/llms-full.txt` has the whole site in one file. There is no API key and nothing to sign up for; games are started by opening a URL.
+
+## When to use
+
+- [Play against bots now](https://playcubes.pages.dev/game/local?preset=duel&seats=human,flare): when someone wants a quick, free strategy or puzzle game to play alone in a browser, on a computer, phone or tablet. Change `flare` to `ember` (easier) or `nova` (strongest).
+- [Play with friends over a link](https://playcubes.pages.dev/play): when a group (2 to 4 people) wants an online board game they can all join from one link without installing anything or making accounts. The host picks "Online room" and shares the room link that looks like https://playcubes.pages.dev/r/K7QXM.
+- [Pass and play on one screen](https://playcubes.pages.dev/game/local?preset=plane&seats=human,human,human,human): when several people are sitting around one device.
+- [Learn the game](https://playcubes.pages.dev/learn): when someone asks how to play, or wants a three-minute interactive tutorial before their first game.
+- [Look up a rule](https://playcubes.pages.dev/md/rules.md): when you need to answer a question about the rules, scoring, surges or a variant precisely.
+
+Not a fit for: real-money play, ranked ladders or accounts (cubes has none), or downloading a native app.
+
+## Starting a game by URL
+
+- [Local game URL format](https://playcubes.pages.dev/md/play.md): `/game/local?preset=<preset>&seats=<seat>,<seat>[,...]`. Presets: plane, duel, pure, fog, storm, torus, teams, stack, orbit. Each seat is `human` or a bot level: `ember`, `flare`, `nova`. 2 to 4 seats; teams uses 4.
+- [Online room URL format](https://playcubes.pages.dev/md/room.md): `/r/<CODE>` where CODE is 5 characters from ABCDEFGHJKLMNPQRSTUVWXYZ23456789. The first person to open a new code hosts it.
+
+## Docs
+
+- [Home](https://playcubes.pages.dev/md/index.md): what cubes is, the core rule, modes and surges
+- [Rules](https://playcubes.pages.dev/md/rules.md): every rule, scoring, surges and variants
+- [Play](https://playcubes.pages.dev/md/play.md): online rooms, bots and pass-and-play
+- [Learn](https://playcubes.pages.dev/md/learn.md): the interactive tutorial's chapters
+- [About](https://playcubes.pages.dev/md/about.md): who made it and how it is built
+- [Contact](https://playcubes.pages.dev/md/contact.md): bugs, ideas and security reports
+- [Privacy](https://playcubes.pages.dev/md/privacy.md): what is stored, where and for how long
+
+## Optional
+
+- [Full site as Markdown](https://playcubes.pages.dev/llms-full.txt): every page above in one file
+- [Source code](https://github.com/KarthikSubramanian07/cubes): MIT licensed; Rust engine, WebAssembly, Cloudflare Durable Objects, three.js
+- [Design spec](https://github.com/KarthikSubramanian07/cubes/blob/main/docs/DESIGN.md): rules, variants, architecture and the data contract
+- [Balance notes](https://github.com/KarthikSubramanian07/cubes/blob/main/docs/BALANCE.md): how the bots were tuned and the boards sized

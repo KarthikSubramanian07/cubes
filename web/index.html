@@ -3,9 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>cubes: a territory game of light and corners</title>
+    <title>cubes: a free online territory strategy game of light and corners</title>
     <meta name="description" content="A territory game of light and corners. Place glowing shards, link them corner to corner, and claim the board. 2D, 3D, fog of war and more, with friends over a link or against bots. Free, no signup." />
+    <meta name="keywords" content="cubes, online strategy game, territory game, polyomino game, board game, multiplayer browser game, 3D puzzle game, play with friends online" />
     <meta name="robots" content="index, follow" />
+    <link rel="alternate" type="text/markdown" href="/md/index.md" title="This page as Markdown" />
     <link rel="canonical" href="https://playcubes.pages.dev/" />
     <meta name="theme-color" content="#f2eee5" />
     <meta name="color-scheme" content="light dark" />
@@ -49,6 +51,7 @@
         "image": "https://playcubes.pages.dev/og.png",
         "description": "An original territory game about light that spreads by its corners. Players place shards on a shared board; each new shard must touch the player's own light at a corner and never along a face.",
         "genre": ["Strategy", "Puzzle", "Board game"],
+        "keywords": "online strategy game, territory game, polyomino game, board game, multiplayer browser game, 3D puzzle game, play with friends online",
         "gamePlatform": ["Web browser"],
         "applicationCategory": "Game",
         "operatingSystem": "Any",
@@ -57,15 +60,21 @@
         "inLanguage": "en",
         "isAccessibleForFree": true,
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-        "author": { "@type": "Person", "name": "Karthik Subramanian" },
+        "author": {
+          "@type": "Person",
+          "name": "Karthik Subramanian",
+          "description": "Software developer who designed and built cubes, its Rust rules engine and its online rooms.",
+          "url": "https://github.com/KarthikSubramanian07",
+          "sameAs": ["https://github.com/KarthikSubramanian07", "https://karthiksubramanian07.github.io/"]
+        },
         "license": "https://opensource.org/licenses/MIT"
       }
     </script>
   </head>
   <body>
     <noscript>
-      <p>
-        cubes is a territory game that runs in your browser, and it needs JavaScript to do that. Turn it on and come back; the corners will wait.
+      <p class="noscript-note">
+        You can read everything here without JavaScript. To play, turn it on and come back; the corners will wait.
       </p>
     </noscript>
     <div id="root"></div>

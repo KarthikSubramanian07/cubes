@@ -1,3 +1,4 @@
+import { CONTENT_PAGES } from "@/content/routes";
 import { Link } from "react-router";
 import { useDocumentMeta } from "@/app/meta";
 import { PRESETS, presetConfig } from "@/app/presets";
@@ -11,6 +12,8 @@ import { ModeArt } from "@/ui/ModeArt";
 import { SurgeIcon, type SurgeName } from "@/ui/SurgeIcon";
 import { HeroScene } from "./landing/HeroScene";
 import "./landing/landing.css";
+
+const HOME = CONTENT_PAGES[0]!;
 
 function Reveal({ children, className, delay = 0, as: Tag = "div" }: { children: React.ReactNode; className?: string; delay?: number; as?: "div" | "li" | "article" }) {
   const [ref, inView] = useInView<HTMLDivElement>();
@@ -444,9 +447,8 @@ function Closer() {
 
 export function Component() {
   useDocumentMeta({
-    title: "cubes",
-    description:
-      "A territory game of light and corners. Place glowing shards, link them corner to corner, and claim the board. 2D, 3D, fog of war and more, with friends over a link or against bots. Free, no signup.",
+    title: HOME.title,
+    description: HOME.description,
     path: "/",
   });
   return (
