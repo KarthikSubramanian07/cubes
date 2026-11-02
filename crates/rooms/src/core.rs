@@ -58,10 +58,26 @@ pub struct Outbound {
     pub msg: ServerMsg,
 }
 
+/// Estimated CPU cost of one Nova playout in wasm, per board cell per
+/// playout ply. Measured natively at about 0.0036 ms (11.5 ms per playout on
+/// a 4-seat 20x20 board, 2.8 ms on a 14x14 duel) and scaled by 1.5 for wasm.
+pub const PLAYOUT_MS_PER_CELL_PLY: f64 = 0.0054;
+
 /// How bots think: a monotonic millisecond clock and Nova's budget.
 pub struct Thinker<'a> {
     pub clock: &'a dyn Fn() -> f64,
     pub nova_budget_ms: f64,
+    /// True where the clock stands still during synchronous work (Workers
+    /// only advance `Date.now()` on I/O). Nova then charges each clock read
+    /// the estimated cost of one playout, so the budget still means CPU time.
+    pub frozen_clock: bool,
+}
+
+/// Estimated wasm CPU milliseconds for one Nova playout under `cfg`.
+pub fn playout_cost_ms(cfg: &GameConfig) -> f64 {
+    let cells: f64 = cfg.dims.iter().map(|&d| d as f64).product();
+    let depth = (cfg.seats as f64 * 2.0).max(4.0);
+    cells * depth * PLAYOUT_MS_PER_CELL_PLY
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -342,7 +358,10 @@ impl RoomCore {
     }
 
     fn seat_of(&self, pid: &str) -> Option<u8> {
-        self.seats.iter().position(|s| matches!(s, Slot::Human { pid: p, .. } if p == pid)).map(|i| i as u8)
+        self.seats
+            .iter()
+            .position(|s| matches!(s, Slot::Human { pid: p, .. } if p == pid))
+            .map(|i| i as u8)
     }
 
     fn conn_pid(&self, conn: ConnId) -> Option<String> {
@@ -352,7 +371,12 @@ impl RoomCore {
     /// Which connections a target reaches.
     pub fn resolve(&self, to: Target) -> Vec<ConnId> {
         match to {
-            Target::Conn(c) => self.conns.contains_key(&c).then_some(c).into_iter().collect(),
+            Target::Conn(c) => self
+                .conns
+                .contains_key(&c)
+                .then_some(c)
+                .into_iter()
+                .collect(),
             Target::All => self
                 .conns
                 .iter()
@@ -680,7 +704,10 @@ impl RoomCore {
     ) -> Vec<Outbound> {
         let err = |code: ErrorCode, m: &str| vec![to_conn(conn, ServerMsg::error(code, m))];
         if !valid_pid(&pid) {
-            return err(ErrorCode::BadMessage, "pid must be 8 to 64 of [A-Za-z0-9_-]");
+            return err(
+                ErrorCode::BadMessage,
+                "pid must be 8 to 64 of [A-Za-z0-9_-]",
+            );
         }
         if let Some(existing) = self.conn_pid(conn) {
             if existing != pid {
@@ -694,7 +721,10 @@ impl RoomCore {
         let token = match self.players.get_mut(&pid) {
             Some(p) => {
                 if token.as_deref() != Some(p.token.as_str()) {
-                    return err(ErrorCode::BadToken, "that player id belongs to someone else");
+                    return err(
+                        ErrorCode::BadToken,
+                        "that player id belongs to someone else",
+                    );
                 }
                 p.name = name;
                 p.disconnected_at = None;
@@ -819,8 +849,8 @@ impl RoomCore {
     fn config_for(&self, n: u8) -> Result<GameConfig, String> {
         let mut cfg = self.config.clone();
         if self.preset != "custom" {
-            let fitted = GameConfig::preset(&self.preset, n)
-                .ok_or_else(|| "unknown preset".to_string())?;
+            let fitted =
+                GameConfig::preset(&self.preset, n).ok_or_else(|| "unknown preset".to_string())?;
             if fitted.seats != n {
                 return Err(format!(
                     "{} is for exactly {} players",
@@ -869,7 +899,14 @@ impl RoomCore {
         self.clock_key = None;
     }
 
-    fn play(&mut self, conn: ConnId, pid: &str, action: Action, ply: u32, now: u64) -> Vec<Outbound> {
+    fn play(
+        &mut self,
+        conn: ConnId,
+        pid: &str,
+        action: Action,
+        ply: u32,
+        now: u64,
+    ) -> Vec<Outbound> {
         let err = |code: ErrorCode, m: &str| vec![to_conn(conn, ServerMsg::error(code, m))];
         if self.phase != RoomPhase::Playing {
             return err(ErrorCode::WrongPhase, "no game is running");
@@ -943,7 +980,9 @@ impl RoomCore {
     fn controller(&self, seat: u8) -> Controller {
         match &self.seats[seat as usize] {
             Slot::Bot { level } => Controller::Bot(*level),
-            Slot::Human { autopilot: true, .. } => Controller::Bot(Level::Flare),
+            Slot::Human {
+                autopilot: true, ..
+            } => Controller::Bot(Level::Flare),
             _ => Controller::Human,
         }
     }
@@ -1019,8 +1058,20 @@ impl RoomCore {
         } else {
             0.0
         };
+        let est = playout_cost_ms(&g.data.config);
+        let t0 = (thinker.clock)();
+        let reads = std::cell::Cell::new(0u32);
+        let synthetic = || {
+            reads.set(reads.get() + 1);
+            ((thinker.clock)() - t0).max(reads.get() as f64 * est)
+        };
+        let clock: &dyn Fn() -> f64 = if thinker.frozen_clock {
+            &synthetic
+        } else {
+            thinker.clock
+        };
         let action = g
-            .bot_action(seat as usize, level, seed, budget, thinker.clock)
+            .bot_action(seat as usize, level, seed, budget, clock)
             .unwrap_or(Action::Resign);
         self.bot_key = Some((g.state().ply, seat));
         match self.apply(seat, action, now) {
@@ -1045,12 +1096,14 @@ impl RoomCore {
                     Slot::Human {
                         pid,
                         autopilot: false,
-                    } => !self.connected(pid)
-                        && self
-                            .players
-                            .get(pid)
-                            .and_then(|p| p.disconnected_at)
-                            .is_some_and(|t| now >= t + GRACE_MS),
+                    } => {
+                        !self.connected(pid)
+                            && self
+                                .players
+                                .get(pid)
+                                .and_then(|p| p.disconnected_at)
+                                .is_some_and(|t| now >= t + GRACE_MS)
+                    }
                     _ => false,
                 };
                 if gone {

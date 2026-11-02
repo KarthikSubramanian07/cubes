@@ -273,7 +273,13 @@ mod tests {
             }
         );
         let m: ClientMsg = serde_json::from_str(r#"{"t":"setBot","seat":2,"level":null}"#).unwrap();
-        assert_eq!(m, ClientMsg::SetBot { seat: 2, level: None });
+        assert_eq!(
+            m,
+            ClientMsg::SetBot {
+                seat: 2,
+                level: None
+            }
+        );
         let m: ClientMsg =
             serde_json::from_str(r#"{"t":"setBot","seat":1,"level":"nova"}"#).unwrap();
         assert_eq!(
@@ -289,11 +295,16 @@ mod tests {
         .unwrap();
         assert!(matches!(m, ClientMsg::Action { ply: 4, .. }));
         let m: ClientMsg = serde_json::from_str(r#"{"t":"emote","kind":"gg"}"#).unwrap();
-        assert_eq!(m, ClientMsg::Emote { kind: EmoteKind::Gg });
+        assert_eq!(
+            m,
+            ClientMsg::Emote {
+                kind: EmoteKind::Gg
+            }
+        );
         assert!(serde_json::from_str::<ClientMsg>(r#"{"t":"emote","kind":"rude"}"#).is_err());
         let cfg = GameConfig::preset("duel", 2).unwrap();
-        let m: ClientMsg = serde_json::from_value(json!({"t":"configure","preset":"duel","config":cfg}))
-            .unwrap();
+        let m: ClientMsg =
+            serde_json::from_value(json!({"t":"configure","preset":"duel","config":cfg})).unwrap();
         assert!(matches!(m, ClientMsg::Configure { .. }));
     }
 
@@ -334,7 +345,10 @@ mod tests {
 
     #[test]
     fn names_and_codes_are_sanitized() {
-        assert_eq!(sanitize_name("  Ada \u{0007}Love\u{200B}lace  "), "Ada Lovelace");
+        assert_eq!(
+            sanitize_name("  Ada \u{0007}Love\u{200B}lace  "),
+            "Ada Lovelace"
+        );
         assert_eq!(sanitize_name("a\n\n\tb"), "a b");
         assert_eq!(sanitize_name(&"x".repeat(40)).chars().count(), 24);
         assert_eq!(sanitize_name("\u{202E}\u{0000}"), "");

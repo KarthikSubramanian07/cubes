@@ -14,6 +14,7 @@ fn thinker() -> Thinker<'static> {
     Thinker {
         clock: &clock,
         nova_budget_ms: 15.0,
+        frozen_clock: false,
     }
 }
 
@@ -118,7 +119,11 @@ impl Room {
         let mut g = Game::from_data(self.core.game().unwrap().data.clone()).unwrap();
         let seat = g.state().turn as usize;
         for leap in [false, true] {
-            if let Some(p) = g.legal(seat, leap).into_iter().max_by_key(|p| p.cells.len()) {
+            if let Some(p) = g
+                .legal(seat, leap)
+                .into_iter()
+                .max_by_key(|p| p.cells.len())
+            {
                 return Action::Place {
                     piece: p.piece,
                     orient: p.orient,
@@ -145,7 +150,10 @@ fn plane_with_bots(room: &mut Room, host: ConnId, bots: &[(u8, &str)]) {
 fn first_hello_becomes_host_and_gets_a_token() {
     let mut r = Room::new();
     let a = r.connect();
-    r.send(a, json!({"t":"hello","pid":"alice-0001","name":"  Alice\u{0007} "}));
+    r.send(
+        a,
+        json!({"t":"hello","pid":"alice-0001","name":"  Alice\u{0007} "}),
+    );
     let msgs = r.take(a);
     let ServerMsg::Welcome { pid, token, host } = &msgs[0] else {
         panic!("expected welcome first, got {msgs:?}");
@@ -294,7 +302,10 @@ fn configure_is_validated() {
     r.send(a, json!({"t":"configure","preset":"custom","config":cfg}));
     assert_eq!(r.errors(a), vec![ErrorCode::BadConfig]);
     // A malformed config is a bad message, not a crash.
-    r.send(a, json!({"t":"configure","preset":"plane","config":{"dims":[1]}}));
+    r.send(
+        a,
+        json!({"t":"configure","preset":"plane","config":{"dims":[1]}}),
+    );
     assert_eq!(r.errors(a), vec![ErrorCode::BadMessage]);
     cfg.turn_seconds = Some(30);
     r.send(a, json!({"t":"configure","preset":"custom","config":cfg}));
@@ -490,9 +501,9 @@ fn turn_timer_expiry_plays_a_flare_move() {
     assert_eq!(r.turn().1, 1);
     let msgs = r.take(b);
     assert!(msgs.iter().any(|m| matches!(m, ServerMsg::View { .. })));
-    assert!(msgs.iter().any(
-        |m| matches!(m, ServerMsg::Clock { seat: 1, ends_at: Some(e) } if *e == T0 + 20_000)
-    ));
+    assert!(msgs
+        .iter()
+        .any(|m| matches!(m, ServerMsg::Clock { seat: 1, ends_at: Some(e) } if *e == T0 + 20_000)));
     // Seat 1 moves in time; the clock passes back.
     r.advance(3_000);
     let (ply, _) = r.turn();
@@ -605,7 +616,10 @@ fn fog_spectators_and_opponents_get_redacted_views() {
         assert!(spec.cells.iter().filter(|&&o| o == seat).count() <= 1);
     }
     assert!(spec.scores.is_none());
-    assert!(spec.seats.iter().all(|sv| sv.pieces.is_none() && sv.charge.is_none()));
+    assert!(spec
+        .seats
+        .iter()
+        .all(|sv| sv.pieces.is_none() && sv.charge.is_none()));
     assert!(spec
         .events
         .iter()
@@ -615,10 +629,10 @@ fn fog_spectators_and_opponents_get_redacted_views() {
     let v0 = r.last_view(host).expect("player view");
     assert_eq!(v0.seat, Some(0));
     let mut hidden_opp = 0;
-    for i in 0..truth.len() {
+    for (i, &t) in truth.iter().enumerate() {
         if v0.flags[i] & F_VISIBLE != 0 {
-            assert_eq!(v0.cells[i], truth[i], "visible cell {i} must be true");
-        } else if truth[i] == 2 && v0.cells[i] != 2 {
+            assert_eq!(v0.cells[i], t, "visible cell {i} must be true");
+        } else if t == 2 && v0.cells[i] != 2 {
             hidden_opp += 1;
         }
     }
@@ -628,7 +642,7 @@ fn fog_spectators_and_opponents_get_redacted_views() {
     assert!(v0.seats[1].charge.is_none());
     assert!(v0.seats[0].pieces.is_some());
     assert!(v0.scores.is_none());
-    assert!(v0.cells.iter().all(|&o| o < 5 || o >= 250));
+    assert!(v0.cells.iter().all(|&o| !(5..250).contains(&o)));
     assert!(spec.cells.iter().all(|&o| !is_seat(o) || o <= 2));
 }
 
@@ -646,7 +660,15 @@ fn connections_are_rate_limited() {
         .count();
     let limited = msgs
         .iter()
-        .filter(|m| matches!(m, ServerMsg::Error { code: ErrorCode::RateLimited, .. }))
+        .filter(|m| {
+            matches!(
+                m,
+                ServerMsg::Error {
+                    code: ErrorCode::RateLimited,
+                    ..
+                }
+            )
+        })
         .count();
     assert_eq!(pongs, 20);
     assert_eq!(limited, 1, "warn once, then drop silently");
@@ -671,11 +693,19 @@ fn connections_are_rate_limited() {
 fn oversized_and_malformed_frames_are_rejected() {
     let mut r = Room::new();
     let (a, _) = r.join("alice-0001", "Alice");
-    let big = format!(r#"{{"t":"chat","text":"{}"}}"#, "x".repeat(MAX_MESSAGE_BYTES));
+    let big = format!(
+        r#"{{"t":"chat","text":"{}"}}"#,
+        "x".repeat(MAX_MESSAGE_BYTES)
+    );
     let out = r.core.on_text(a, &big, r.now);
     r.deliver(out);
     assert_eq!(r.errors(a), vec![ErrorCode::TooLarge]);
-    for bad in ["not json", r#"{"t":"fly"}"#, r#"{"t":"sit","seat":"x"}"#, "[]"] {
+    for bad in [
+        "not json",
+        r#"{"t":"fly"}"#,
+        r#"{"t":"sit","seat":"x"}"#,
+        "[]",
+    ] {
         let out = r.core.on_text(a, bad, r.now);
         r.deliver(out);
         assert_eq!(r.errors(a), vec![ErrorCode::BadMessage], "{bad}");
@@ -688,9 +718,18 @@ fn chat_is_sanitized_rate_limited_and_replayed() {
     let (a, _) = r.join("alice-0001", "Alice");
     r.send(a, json!({"t":"sit","seat":1}));
     r.take(a);
-    r.send(a, json!({"t":"chat","text":format!("  hi\u{0000} there {}", "y".repeat(300))}));
+    r.send(
+        a,
+        json!({"t":"chat","text":format!("  hi\u{0000} there {}", "y".repeat(300))}),
+    );
     let msgs = r.take(a);
-    let ServerMsg::Chat { name, seat, text, at } = &msgs[0] else {
+    let ServerMsg::Chat {
+        name,
+        seat,
+        text,
+        at,
+    } = &msgs[0]
+    else {
         panic!("{msgs:?}");
     };
     assert_eq!(name, "Alice");
@@ -747,7 +786,10 @@ fn host_migrates_after_a_minute_away() {
         a2,
         json!({"t":"hello","pid":"alice-0001","name":"Alice","token":ta}),
     );
-    assert!(matches!(r.take(a2)[0], ServerMsg::Welcome { host: false, .. }));
+    assert!(matches!(
+        r.take(a2)[0],
+        ServerMsg::Welcome { host: false, .. }
+    ));
 
     // Returning within the minute keeps the crown.
     let mut r = Room::new();
@@ -820,4 +862,38 @@ fn reseeding_changes_tokens_and_seeds() {
     let mut b = RoomCore::new("ABCDE", T0, 1);
     b.reseed(99);
     assert_ne!(a.new_token(), b.new_token());
+}
+
+#[test]
+fn nova_budget_holds_with_a_frozen_clock() {
+    let mut r = Room::new();
+    let (a, _) = r.join("alice-0001", "Alice");
+    r.send(
+        a,
+        json!({"t":"configure","preset":"duel","config":GameConfig::preset("duel",2).unwrap()}),
+    );
+    plane_with_bots(&mut r, a, &[(0, "nova"), (1, "nova")]);
+    r.send(a, json!({"t":"start"}));
+    let est = playout_cost_ms(&r.core.game().unwrap().data.config);
+    assert!((4.0..4.5).contains(&est), "{est}");
+    let reads = std::cell::Cell::new(0u32);
+    // A clock that never moves, like Date.now() inside a Worker.
+    let frozen = || {
+        reads.set(reads.get() + 1);
+        1234.0
+    };
+    let budget = 40.0;
+    let t = Thinker {
+        clock: &frozen,
+        nova_budget_ms: budget,
+        frozen_clock: true,
+    };
+    let d = r.core.next_deadline().unwrap();
+    let out = r.core.tick(d, &t);
+    assert!(out.iter().any(|o| matches!(o.msg, ServerMsg::View { .. })));
+    assert_eq!(r.turn().0, 1, "nova moved");
+    // About budget / cost playouts: each synthetic read costs one estimate.
+    let max_reads = 2 * ((budget / est) as u32 + 3);
+    assert!(reads.get() <= max_reads, "{} reads", reads.get());
+    assert!(reads.get() >= 4, "{} reads", reads.get());
 }
