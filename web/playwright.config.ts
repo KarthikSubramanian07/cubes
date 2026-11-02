@@ -19,7 +19,21 @@ export default defineConfig({
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        // Real GPU on macOS (Metal via ANGLE); software WebGL elsewhere (CI).
+        launchOptions: {
+          args:
+            process.platform === "darwin"
+              ? ["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"]
+              : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+        },
+      },
+    },
+  ],
   webServer: {
     command: `bunx vite build && bunx vite preview --port ${PORT} --strictPort --host 127.0.0.1`,
     url: `http://127.0.0.1:${PORT}`,
