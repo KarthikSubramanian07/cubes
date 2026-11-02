@@ -362,6 +362,10 @@ export function Component() {
               The arena layer is on by default. Neutral <strong>nodes</strong> are scattered with rotational symmetry, so every seat sees the same map
               from its corner. Cover a node with a shard and you gain <strong>+1 charge</strong>, up to 9. Spend charge on surges during your turn:
             </p>
+            <p>
+              Going second in a two-player 2D game is a real handicap, because your opponent reaches the nodes first. So the second player starts with{" "}
+              <strong>2 charge</strong> in hand (1 on a torus). We measured it; it evens things out.
+            </p>
             <table>
               <thead>
                 <tr>
@@ -539,7 +543,7 @@ export function Component() {
             }
           >
             <p>
-              In 3D modes a corner means sharing an edge or a vertex but not a face. <strong>Orbit</strong> is a floating 7×7×7 cube with no gravity.
+              In 3D modes a corner means sharing an edge or a vertex but not a face. <strong>Orbit</strong> is a floating 7×7×7 cube (6×6×6 for two) with no gravity.
             </p>
             <p>
               In <strong>Stack</strong>, every cube needs support directly below it: the floor, any occupied cube or scar, or another cube of the same
@@ -576,7 +580,7 @@ export function Component() {
               </div>
               <div>
                 <dt>Charge</dt>
-                <dd>+1 per node covered, max 9.</dd>
+                <dd>+1 per node covered, max 9. The second player in a two-player 2D game starts with 2 (1 on a torus).</dd>
               </div>
               <div>
                 <dt>Surges</dt>

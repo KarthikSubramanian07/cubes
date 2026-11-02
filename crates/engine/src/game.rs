@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
+use crate::bits::{generate, kit_mask, prepare, seat_rows, GenInput, Geo};
 use crate::config::{core_cells, node_cells, ConfigError, GameConfig};
 use crate::geometry::Lattice;
 use crate::pieces::Kit;
@@ -38,6 +39,8 @@ pub struct Ctx {
     pub lat: Lattice,
     pub kit: Kit,
     pub table: Table,
+    /// Bitboard geometry and per-cell placement windows.
+    pub geo: Geo,
 }
 
 impl Ctx {
@@ -46,11 +49,13 @@ impl Ctx {
         let lat = Lattice::new(config.dims, config.shape, config.topology);
         let kit = Kit::new(config.kit);
         let table = Table::build(&lat, &kit);
+        let geo = Geo::build(&lat, &kit, &table, config.gravity);
         Ok(Arc::new(Ctx {
             config,
             lat,
             kit,
             table,
+            geo,
         }))
     }
 }
@@ -206,15 +211,26 @@ pub struct Move {
 /// Reusable buffers for move generation, so hot loops don't allocate.
 #[derive(Clone, Debug, Default)]
 pub struct Scratch {
-    stamp: Vec<u32>,
-    epoch: u32,
-    forbidden: Vec<bool>,
-    cand: Vec<u32>,
+    pub(crate) stamp: Vec<u32>,
+    pub(crate) epoch: u32,
+    // Bitboard rows (see `bits`).
+    pub(crate) own: Vec<u64>,
+    pub(crate) light: Vec<u64>,
+    pub(crate) forb: Vec<u64>,
+    pub(crate) fp: Vec<u64>,
+    pub(crate) cand: Vec<u64>,
+    pub(crate) tmp: Vec<u64>,
+    pub(crate) tmp2: Vec<u64>,
+    pub(crate) solid: Vec<u64>,
+    pub(crate) air: Vec<u64>,
+    // Reference generator.
+    nforbidden: Vec<bool>,
+    ncand: Vec<u32>,
     ball: Vec<usize>,
 }
 
 impl Scratch {
-    fn prepare(&mut self, ctx: &Ctx) {
+    pub(crate) fn prepare(&mut self, ctx: &Ctx) {
         if self.stamp.len() != ctx.table.len() {
             self.stamp = vec![0; ctx.table.len()];
             self.epoch = 0;
@@ -260,9 +276,9 @@ impl State {
             flags[c] |= F_NODE;
         }
         let seats = (0..cfg.seats)
-            .map(|_| SeatState {
+            .map(|s| SeatState {
                 pieces: vec![true; ctx.kit.pieces.len()],
-                charge: 0,
+                charge: if s == 1 { second_seat_charge(cfg) } else { 0 },
                 dark: false,
                 resigned: false,
             })
@@ -433,15 +449,64 @@ impl State {
         if !spark && !st.pieces.iter().any(|p| *p) {
             return;
         }
+        seat_rows(ctx, &self.cells, seat, scratch);
+        prepare(ctx, leap, scratch);
+        scratch.prepare(ctx);
+        let inp = GenInput {
+            fp: &scratch.fp,
+            cand: &scratch.cand,
+            air: &scratch.air,
+            pieces: kit_mask(&st.pieces),
+            spark,
+            leap,
+        };
+        generate(
+            ctx,
+            &inp,
+            &mut scratch.stamp,
+            scratch.epoch,
+            out,
+            first_only,
+        );
+    }
+
+    /// The original, straightforward generator: recompute forbidden cells
+    /// and anchors cell by cell, then test every placement through each
+    /// anchor. Kept as the reference that the bitboard generator is tested
+    /// against, and as the baseline in `cubes-sim --bench`.
+    #[doc(hidden)]
+    pub fn gen_moves_naive(
+        &self,
+        ctx: &Ctx,
+        seat: usize,
+        mode: GenMode,
+        scratch: &mut Scratch,
+        out: &mut Vec<Move>,
+        first_only: bool,
+    ) {
+        let cfg = &ctx.config;
+        let st = &self.seats[seat];
+        let spark = matches!(mode, GenMode::Spark | GenMode::SparkLeap);
+        let leap = matches!(mode, GenMode::Leap | GenMode::SparkLeap);
+        if (spark || leap) && !cfg.arena {
+            return;
+        }
+        let cost = if spark { COST_SPARK } else { 0 } + if leap { COST_LEAP } else { 0 };
+        if st.charge < cost {
+            return;
+        }
+        if !spark && !st.pieces.iter().any(|p| *p) {
+            return;
+        }
         let lat = &ctx.lat;
         let n = lat.len();
         let own = seat as u8 + 1;
         scratch.prepare(ctx);
         // Forbidden cells: not empty, or face-adjacent to our own colour.
-        scratch.forbidden.clear();
-        scratch.forbidden.resize(n, false);
+        scratch.nforbidden.clear();
+        scratch.nforbidden.resize(n, false);
         for i in 0..n {
-            scratch.forbidden[i] = self.cells[i] != EMPTY
+            scratch.nforbidden[i] = self.cells[i] != EMPTY
                 || lat
                     .face
                     .get(i)
@@ -449,7 +514,7 @@ impl State {
                     .any(|&f| self.cells[f as usize] == own);
         }
         // Candidate anchor cells.
-        scratch.cand.clear();
+        scratch.ncand.clear();
         if leap {
             let mut ball = std::mem::take(&mut scratch.ball);
             let mut mark = vec![false; n];
@@ -458,9 +523,9 @@ impl State {
                     ball.clear();
                     lat.ball(i, 2, &mut ball);
                     for &b in &ball {
-                        if !scratch.forbidden[b] && !mark[b] {
+                        if !scratch.nforbidden[b] && !mark[b] {
                             mark[b] = true;
-                            scratch.cand.push(b as u32);
+                            scratch.ncand.push(b as u32);
                         }
                     }
                 }
@@ -468,21 +533,21 @@ impl State {
             scratch.ball = ball;
         } else {
             for i in 0..n {
-                if !scratch.forbidden[i]
+                if !scratch.nforbidden[i]
                     && lat
                         .link
                         .get(i)
                         .iter()
                         .any(|&l| self.lights_with(ctx, seat, self.cells[l as usize]))
                 {
-                    scratch.cand.push(i as u32);
+                    scratch.ncand.push(i as u32);
                 }
             }
         }
         let spark_index = ctx.kit.spark_index;
         let table = &ctx.table;
-        for ci in 0..scratch.cand.len() {
-            let c = scratch.cand[ci] as usize;
+        for ci in 0..scratch.ncand.len() {
+            let c = scratch.ncand[ci] as usize;
             for &pid in table.covering(c) {
                 let p = pid as usize;
                 if scratch.stamp[p] == scratch.epoch {
@@ -498,7 +563,7 @@ impl State {
                     continue;
                 }
                 let cells = table.cells(p);
-                if cells.iter().any(|&x| scratch.forbidden[x as usize]) {
+                if cells.iter().any(|&x| scratch.nforbidden[x as usize]) {
                     continue;
                 }
                 if cfg.gravity && !supported(lat, &self.cells, cells) {
@@ -811,6 +876,24 @@ impl State {
     }
 }
 
+/// Moving second is a real disadvantage in two-seat 2D games: seat 0 reaches
+/// the nodes first. Self-play put it at about 17 points of win share on
+/// 14x14; charge in hand for the second seat brings it to zero within noise.
+/// 3D boards were already fair, and the torus needs less. See docs/BALANCE.md.
+pub const SECOND_SEAT_CHARGE: u8 = 2;
+pub const SECOND_SEAT_CHARGE_TORUS: u8 = 1;
+
+/// Charge the second seat starts with.
+pub fn second_seat_charge(cfg: &GameConfig) -> u8 {
+    if cfg.seats != 2 || !cfg.arena || cfg.dims[2] > 1 {
+        0
+    } else if cfg.topology == crate::geometry::Topology::Torus {
+        SECOND_SEAT_CHARGE_TORUS
+    } else {
+        SECOND_SEAT_CHARGE
+    }
+}
+
 fn supported(lat: &Lattice, board: &[u8], cells: &[u32]) -> bool {
     cells.iter().all(|&c| match lat.below(c as usize) {
         None => true,
@@ -1028,6 +1111,22 @@ mod tests {
             st.check_shatter(&c, 0, target),
             Err(RuleError::AlreadyShattered)
         );
+    }
+
+    #[test]
+    fn second_seat_starts_with_charge_only_in_two_seat_2d_arena_games() {
+        let charge = |name: &str, seats: u8| {
+            let c = ctx(name, seats);
+            let st = State::new(&c, 1);
+            st.seats.iter().map(|s| s.charge).collect::<Vec<_>>()
+        };
+        assert_eq!(charge("duel", 2), vec![0, SECOND_SEAT_CHARGE]);
+        assert_eq!(charge("torus", 2), vec![0, SECOND_SEAT_CHARGE_TORUS]);
+        assert_eq!(charge("fog", 2), vec![0, SECOND_SEAT_CHARGE]);
+        assert_eq!(charge("stack", 2), vec![0, 0]);
+        assert_eq!(charge("orbit", 2), vec![0, 0]);
+        assert_eq!(charge("pure", 2), vec![0, 0]);
+        assert_eq!(charge("plane", 4), vec![0, 0, 0, 0]);
     }
 
     #[test]

@@ -9,6 +9,7 @@
 #![allow(clippy::needless_range_loop, clippy::too_many_arguments)]
 
 pub mod ai;
+pub mod bits;
 pub mod config;
 pub mod game;
 pub mod geometry;
@@ -17,7 +18,8 @@ pub mod rng;
 pub mod session;
 pub mod table;
 
-pub use ai::{Bot, Level};
+pub use ai::{Bot, BotOptions, Level, Weights};
+pub use bits::Board;
 pub use config::{GameConfig, StormConfig};
 pub use game::{Action, Event, Phase, RuleError};
 pub use geometry::{BoardShape, Topology};
