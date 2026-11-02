@@ -9,3 +9,4 @@ web/src/wasm/pkg/
 build/
 playwright-report/
 test-results/
+*.tsbuildinfo
