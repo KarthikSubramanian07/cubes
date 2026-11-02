@@ -40,6 +40,13 @@ That one rule turns out to be bottomless, so we kept going.
   a Web Worker in your browser, or inside the room server online.
 - **Two looks.** *Night*: luminous glass cubes, bloom, drifting haze.
   *Paper*: the same game, inked in a sketchbook.
+- **Learn it in three minutes.** [First light](https://playcubes.pages.dev/learn)
+  is an interactive tutorial on real boards, with hand-written notes that
+  point at exactly what you did wrong.
+- **Balanced with data, not vibes.** Bots played thousands of games against
+  each other to size the boards and to work out that the second player in a
+  two-player game deserves two charge in hand. The numbers are in
+  [`docs/BALANCE.md`](docs/BALANCE.md).
 
 ## How to play, in thirty seconds
 
@@ -70,6 +77,7 @@ web/
   src/render3d The Night renderer (react-three-fiber, bloom, instancing).
   src/render2d The Paper renderer (SVG, a home-made ink stroke generator).
   src/audio    Fully procedural sound (Web Audio, no files).
+  src/tutorial First light: scripted positions on the real engine.
   src/net      Room client: reconnects, seat tokens, typed protocol.
   functions/   One Pages Function: /api/room/:code -> the room Durable Object.
 ```
@@ -119,9 +127,25 @@ cd ../crates/rooms && npx wrangler dev # Vite proxies /api to :8787
 ## Deploying
 
 Every push to `main` deploys through GitHub Actions: the rooms Worker
-(`playcubes-rooms`) and the Pages site (`playcubes`, served at
-playcubes.pages.dev). Set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
-as repository secrets and it takes care of itself.
+(`playcubes-rooms`) first, then the Pages site (`playcubes`, served at
+playcubes.pages.dev), whose one Pages Function binds the Worker's Durable
+Object by script name so the game and its rooms share an origin. It needs
+`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as repository secrets.
+
+By hand, from a machine logged in with `wrangler login`:
+
+```sh
+cd crates/rooms && npx wrangler deploy          # the Rust Durable Object
+cd ../../web && bun run wasm && bunx vite build
+npx wrangler pages deploy dist --project-name playcubes --branch main
+```
+
+## Docs
+
+- [`docs/DESIGN.md`](docs/DESIGN.md): the rules, every variant, the
+  architecture and the data contract between Rust and TypeScript.
+- [`docs/BALANCE.md`](docs/BALANCE.md): how the bots were tuned and why the
+  boards are the sizes they are.
 
 ## Credit where it is due
 
