@@ -12,6 +12,7 @@ pub struct Args {
     pub weights: Vec<Option<serde_json::Value>>,
     pub budget_ms: f64,
     pub iters: Option<u32>,
+    pub opening: u32,
     pub threads: usize,
     pub seed: u64,
     pub json: bool,
@@ -41,6 +42,8 @@ OPTIONS:
   --budget MS     Nova thinking time per decision, in milliseconds
   --iters N       cap Nova at N search iterations instead of a clock budget
                   (makes Nova games reproducible per seed)
+  --opening N     Ember plays the first N plies for every seat, to spread
+                  self-play over many openings (balance runs use 2 rounds)
   --threads N     worker threads (default: all cores)
   --seed S        base seed; game i uses seed S + i
   --patch JSON    merge these fields over the preset's GameConfig
@@ -62,6 +65,7 @@ pub fn parse(raw: &[String]) -> Result<Args, String> {
         weights: vec![None; 4],
         budget_ms: 50.0,
         iters: None,
+        opening: 0,
         threads: std::thread::available_parallelism()
             .map(|n| n.get())
             .unwrap_or(4),
@@ -118,6 +122,10 @@ pub fn parse(raw: &[String]) -> Result<Args, String> {
             }
             "--iters" => {
                 a.iters = Some(num(&need(i, flag)?)? as u32);
+                i += 1;
+            }
+            "--opening" => {
+                a.opening = num(&need(i, flag)?)? as u32;
                 i += 1;
             }
             "--threads" => {

@@ -70,6 +70,7 @@ pub fn play(args: &Args, cfg: &GameConfig, g: usize) -> GameRecord {
             weights: crate::args::weights_for(args, k).expect("weights validated"),
         })
         .collect();
+    let plain = BotOptions::default();
     let mut rec = GameRecord {
         bots: bots.clone(),
         seats: vec![SeatRecord::default(); seats],
@@ -103,7 +104,14 @@ pub fn play(args: &Args, cfg: &GameConfig, g: usize) -> GameRecord {
             .wrapping_add(seat as u64 * 7919);
         let t0 = Instant::now();
         let b = bots[seat];
-        let action = game.bot_action_with(seat, args.bots[b], bot_seed, budget, &now_ms, &opts[b]);
+        // Randomised opening: Ember plays the first `--opening` plies for
+        // everyone, so near-deterministic bots don't replay one game.
+        let (level, opt) = if game.state().ply < args.opening {
+            (cubes_engine::Level::Ember, &plain)
+        } else {
+            (args.bots[b], &opts[b])
+        };
+        let action = game.bot_action_with(seat, level, bot_seed, budget, &now_ms, opt);
         rec.decisions.push((b, t0.elapsed().as_secs_f64() * 1e6));
         let action = action.unwrap_or(Action::Resign);
         let events = match game.apply(seat, action) {
