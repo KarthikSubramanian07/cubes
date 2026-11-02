@@ -295,7 +295,10 @@ export function GameScreen(props: GameScreenProps) {
         })}
       </ol>
 
-      <main className="g-board-wrap" onContextMenu={(e) => e.preventDefault()} onWheel={(e) => {
+      <main
+        className="g-board-wrap"
+        data-ghost-state={ctl.ghost ? (ctl.ghost.valid ? "valid" : "invalid") : "none"}
+        onContextMenu={(e) => e.preventDefault()} onWheel={(e) => {
         // In 3D the wheel zooms the camera; on paper it turns the shard.
         if (effectiveRenderer === "paper" && ctl.piece !== null) ctl.transform(e.deltaY > 0 ? "rotate" : "rotateBack");
       }}>
@@ -314,7 +317,7 @@ export function GameScreen(props: GameScreenProps) {
 
         {myTurn && !over && (
           <div className="g-turn-note g-hand" aria-live="polite">
-            <span>{ctl.hint ?? (ctl.pending ? "tap again to place" : "your move")}</span>
+            <span>{ctl.hint ?? (ctl.pendingVia === "key" ? "enter places it · n for the next spot" : ctl.pending ? "tap again to place" : "your move")}</span>
             <svg viewBox="0 0 80 60" fill="none" aria-hidden className="g-hand-arrow">
               <path d="M8 6 C 30 4, 56 16, 64 44" />
               <path d="M54 38 L 65 47 L 70 33" />
@@ -412,6 +415,11 @@ export function GameScreen(props: GameScreenProps) {
               ) : (
                 <button className="g-ctl" disabled={ctl.piece === null} onClick={() => { ctl.transform("flip"); props.sound?.rotate?.(); }} title="Flip (F)">
                   ⇋ <span>flip</span>
+                </button>
+              )}
+              {three && (
+                <button className="g-ctl" disabled={!myTurn || ctl.mode !== "place"} onClick={() => ctl.cycleFit(1)} title="Show the next spot this shard fits (N)">
+                  ⌖ <span>next fit</span>
                 </button>
               )}
               {ctl.pending && (

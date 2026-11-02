@@ -6,7 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Action, Kit, Placement, Vec3, View } from "@/engine/types";
-import { anchorFor, cellsAt, snapPlacement, transformOrient, type Transform } from "./placement";
+import { anchorFor, cellsAt, fitsNear, snapPlacement, transformOrient, type Transform } from "./placement";
 import { attachPoints, shatterTargets } from "./board";
 
 export interface ControllerSource {
@@ -39,8 +39,10 @@ export interface Controller {
   legalCount: number;
   hint: string | null;
   busy: boolean;
-  /** Touch: a placement is previewed and waiting for a second tap / confirm. */
+  /** A placement is previewed and waiting for a second tap / confirm. */
   pending: boolean;
+  /** How the pending preview got there: a tap, or stepping through fits with N. */
+  pendingVia: "touch" | "key" | null;
   selectPiece(piece: number | null): void;
   transform(t: Transform): void;
   setLeap(on: boolean): void;
@@ -50,7 +52,12 @@ export interface Controller {
   confirm(): void;
   cancel(): void;
   scan(): void;
+  /** Preview the next (or previous) spot the held shard fits, nearest the cursor first. */
+  cycleFit(dir: 1 | -1): void;
 }
+
+/** In 3D the hovered cell is often face-adjacent to your own light; snap to fits this close. */
+const SNAP_RADIUS_3D = 2;
 
 const SURGE_SPARK = 1;
 const SURGE_LEAP = 2;
@@ -66,6 +73,9 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
   const [pinned, setPinned] = useState<Placement | null>(null);
   const [busy, setBusy] = useState(false);
   const lastAt = useRef<Vec3 | null>(null);
+  const [pinVia, setPinVia] = useState<"touch" | "key" | null>(null);
+  const cycle = useRef<{ key: string; list: Placement[]; index: number } | null>(null);
+  const three = view.config.dims[2] > 1;
   const charge = seat !== null ? (view.seats[seat]?.charge ?? 0) : 0;
   const pieces = seat !== null ? view.seats[seat]?.pieces : null;
 
@@ -104,12 +114,12 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
     const dims = view.config.dims;
     const at = anchorFor(dims, cells, hoverCell);
     lastAt.current = at;
-    const snapped = snapPlacement(legal, piece, orient, hoverCell, at);
+    const snapped = snapPlacement(legal, piece, orient, hoverCell, at, three ? { dims, radius: SNAP_RADIUS_3D } : false);
     if (snapped) return { cells: snapped.cells, seat, valid: true, placement: snapped };
     const raw = cellsAt(dims, cells, at, view.config.topology === "torus");
     if (!raw) return null;
     return { cells: raw, seat, valid: false, placement: null };
-  }, [seat, canAct, mode, piece, pinned, hoverCell, orient, legal, view.config, orientsOf]);
+  }, [seat, canAct, mode, piece, pinned, hoverCell, orient, legal, view.config, orientsOf, three]);
 
   const marks = useMemo(() => {
     if (seat === null || !canAct) return { attach: [], targets: [] };
@@ -199,16 +209,22 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
           return;
         }
         const cells = orientsOf(piece)[orient]!;
-        const snapped = snapPlacement(legal, piece, orient, target.cell, anchorFor(view.config.dims, cells, target.cell), true);
+        const dims = view.config.dims;
+        const snapped = snapPlacement(legal, piece, orient, target.cell, anchorFor(dims, cells, target.cell), {
+          allowOrientChange: true,
+          dims,
+          radius: three ? SNAP_RADIUS_3D : 0,
+        });
         if (snapped) {
           setOrient(snapped.orient);
           setPinned(snapped);
+          setPinVia("touch");
         } else opts.onError?.("nothing fits there");
         return;
       }
       if (!placeGhost()) opts.onError?.(ghost ? "corners only. never along a face" : "off the board");
     },
-    [canAct, seat, mode, marks, piece, pinned, orient, legal, view.config.dims, ghost, placeGhost, submit, transform, orientsOf, opts],
+    [canAct, seat, mode, marks, piece, pinned, orient, legal, view.config.dims, three, ghost, placeGhost, submit, transform, orientsOf, opts],
   );
 
   const setLeap = useCallback(
@@ -237,6 +253,40 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
 
   const scan = useCallback(() => void submit({ type: "scan" }), [submit]);
 
+  const cycleFit = useCallback(
+    (dir: 1 | -1) => {
+      if (!canAct || seat === null || mode !== "place") return;
+      // With nothing in hand, pick up the biggest shard that fits somewhere.
+      let p = piece;
+      if (p === null) {
+        const best = [...playable].filter((i) => i !== kit.sparkIndex).sort((a, b) => kit.pieces[b]!.size - kit.pieces[a]!.size || a - b)[0];
+        if (best === undefined) {
+          opts.onError?.("no shard fits anywhere");
+          return;
+        }
+        p = best;
+        setPiece(best);
+      }
+      const key = `${legalKey}:${p}`;
+      let c = cycle.current;
+      if (!c || c.key !== key) {
+        const from = hoverCell ?? view.seats[seat]?.core ?? null;
+        c = { key, list: fitsNear(legal, p, view.config.dims, from), index: -1 };
+        cycle.current = c;
+      }
+      if (!c.list.length) {
+        opts.onError?.("that shard doesn't fit anywhere");
+        return;
+      }
+      c.index = (c.index + dir + c.list.length) % c.list.length;
+      const next = c.list[c.index]!;
+      setOrient(next.orient);
+      setPinned(next);
+      setPinVia("key");
+    },
+    [canAct, seat, mode, piece, playable, kit, legalKey, hoverCell, legal, view.seats, view.config.dims, opts],
+  );
+
   const cancel = useCallback(() => {
     setPinned(null);
     if (mode !== "place") setModeState("place");
@@ -262,6 +312,7 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
         x: () => setMode("shatter"),
         s: () => selectPiece(kit.sparkIndex),
         c: () => scan(),
+        n: () => cycleFit(e.shiftKey ? -1 : 1),
         enter: () => void placeGhost(),
         " ": () => void placeGhost(),
         escape: () => cancel(),
@@ -288,7 +339,7 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [transform, setLeap, setMode, selectPiece, scan, placeGhost, cancel, leap, kit, pieces]);
+  }, [transform, setLeap, setMode, selectPiece, scan, placeGhost, cancel, cycleFit, leap, kit, pieces]);
 
   // Mouse wheel over the board rotates the shard in hand.
   return {
@@ -303,14 +354,23 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
     hint,
     busy,
     pending: pinned !== null,
+    pendingVia: pinned !== null ? pinVia : null,
     selectPiece,
     transform,
     setLeap,
     setMode,
-    hover: (t) => setHoverCell(t?.cell ?? null),
+    hover: (t) => {
+      // Moving the pointer drops a preview picked with N; a tapped preview stays put.
+      if (t && pinned && pinVia === "key" && !pinned.cells.includes(t.cell)) {
+        setPinned(null);
+        cycle.current = null;
+      }
+      setHoverCell(t?.cell ?? null);
+    },
     select,
     confirm: () => void placeGhost(),
     cancel,
     scan,
+    cycleFit,
   };
 }
