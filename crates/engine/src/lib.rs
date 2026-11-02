@@ -9,6 +9,7 @@
 #![allow(clippy::needless_range_loop, clippy::too_many_arguments)]
 
 pub mod config;
+pub mod game;
 pub mod geometry;
 pub mod pieces;
 pub mod rng;
