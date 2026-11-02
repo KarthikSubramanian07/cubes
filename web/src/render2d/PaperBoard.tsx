@@ -75,6 +75,7 @@ export function PaperBoard(props: BoardSceneProps): JSX.Element {
   const [hoverCell, setHoverCell] = useState<number | null>(null);
   const [focusCell, setFocusCell] = useState<number | null>(null);
   const [kbd, setKbd] = useState(false);
+  const pointerFocus = useRef(false);
   const [announce, setAnnounce] = useState("");
   const lastHover = useRef<number | null>(null);
   const down = useRef<{ id: number; x: number; y: number; cell: number | null; type: string } | null>(null);
@@ -113,9 +114,13 @@ export function PaperBoard(props: BoardSceneProps): JSX.Element {
 
   const onPointerDown = (e: PointerEvent) => {
     // Focus without letting the browser scroll the board under the pointer.
+    // Pointer focus must not move the keyboard cursor (Chrome reports
+    // :focus-visible here if a key was pressed earlier, e.g. a shortcut).
     if (e.pointerType === "mouse") {
       e.preventDefault();
+      pointerFocus.current = true;
       rootRef.current?.focus({ preventScroll: true });
+      pointerFocus.current = false;
     }
     down.current = { id: e.pointerId, x: e.clientX, y: e.clientY, cell: cellAt(e.clientX, e.clientY), type: e.pointerType };
   };
@@ -173,6 +178,7 @@ export function PaperBoard(props: BoardSceneProps): JSX.Element {
   };
 
   const onFocus = () => {
+    if (pointerFocus.current) return;
     let visible = false;
     try {
       visible = rootRef.current?.matches(":focus-visible") ?? false;
