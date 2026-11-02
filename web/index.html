@@ -1,14 +1,70 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>cubes: a territory game of light and corners</title>
-    <meta name="description" content="Place glowing shards, link them by their corners, and claim the board. Play cubes in 2D, 3D, fog of war and more, with friends over a link or against bots. Free, no signup." />
+    <meta name="description" content="A territory game of light and corners. Place glowing shards, link them corner to corner, and claim the board. 2D, 3D, fog of war and more, with friends over a link or against bots. Free, no signup." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://playcubes.pages.dev/" />
     <meta name="theme-color" content="#f2eee5" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="application-name" content="cubes" />
+    <meta name="apple-mobile-web-app-title" content="cubes" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Theme before first paint: stored choice, else the OS. External file so the CSP needs no inline script. -->
+    <script src="/theme-init.js"></script>
+
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="cubes" />
+    <meta property="og:title" content="cubes" />
+    <meta property="og:description" content="A territory game of light and corners. Free, in your browser, with friends over a link or against bots." />
+    <meta property="og:url" content="https://playcubes.pages.dev/" />
+    <meta property="og:image" content="https://playcubes.pages.dev/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="cubes: your light only grows by its corners. Coloured shards on a dark grid." />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="cubes" />
+    <meta name="twitter:description" content="A territory game of light and corners. Free, in your browser, with friends over a link or against bots." />
+    <meta name="twitter:image" content="https://playcubes.pages.dev/og.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "cubes",
+        "alternateName": "playcubes",
+        "url": "https://playcubes.pages.dev/",
+        "image": "https://playcubes.pages.dev/og.png",
+        "description": "An original territory game about light that spreads by its corners. Players place shards on a shared board; each new shard must touch the player's own light at a corner and never along a face.",
+        "genre": ["Strategy", "Puzzle", "Board game"],
+        "gamePlatform": ["Web browser"],
+        "applicationCategory": "Game",
+        "operatingSystem": "Any",
+        "playMode": ["MultiPlayer", "SinglePlayer", "CoOp"],
+        "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 2, "maxValue": 4 },
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Person", "name": "Karthik Subramanian" },
+        "license": "https://opensource.org/licenses/MIT"
+      }
+    </script>
   </head>
   <body>
+    <noscript>
+      <p>
+        cubes is a territory game that runs in your browser, and it needs JavaScript to do that. Turn it on and come back; the corners will wait.
+      </p>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

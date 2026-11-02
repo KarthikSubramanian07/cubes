@@ -1,0 +1,8 @@
+# cubes: a territory game of light and corners
+User-agent: *
+Allow: /
+Disallow: /r/
+Disallow: /game/
+Disallow: /api/
+
+Sitemap: https://playcubes.pages.dev/sitemap.xml
