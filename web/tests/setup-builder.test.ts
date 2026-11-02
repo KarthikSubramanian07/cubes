@@ -42,6 +42,13 @@ describe("buildSetup", () => {
     expect(s.bots).toEqual([null, "ember"]);
   });
 
+  test("online rooms start with open seats, whatever the hub had for bots", () => {
+    // The hub keeps a bot level per seat for its Versus bots mode; an online
+    // room used to inherit those and seat Flare bots nobody asked for.
+    const s = buildSetup({ kind: "online", preset: "plane", bots: [null, "flare", "flare", "flare"] });
+    expect(s.bots).toEqual([null, null, null, null]);
+  });
+
   test("local game has no bots", () => {
     const s = buildSetup({ kind: "local", preset: "plane", bots: [null, "nova", "nova", "nova"] });
     expect(s.bots).toEqual([null, null, null, null]);
