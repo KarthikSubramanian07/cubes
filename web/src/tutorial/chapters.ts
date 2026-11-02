@@ -52,10 +52,10 @@ const core: Chapter = {
   id: "core",
   title: ["Your ", "Core", "."],
   short: "Your Core",
-  goal: "Place your first shard so it touches your Core at a corner.",
+  goal: "Place your first piece so it touches your Core at a corner.",
   body: [
-    "That glowing square is your Core. Everything you will ever own grows out of it, one corner at a time.",
-    "Pick a shard from the tray, turn it with R or flip it with F, and set it down so one of its cells touches the Core diagonally. Touch it along a side and the board says no.",
+    "That glowing square is your Core. Every piece you place this game grows out of it, one corner at a time.",
+    "Pick a piece from the tray, turn it with R or flip it with F, and set it down so one of its squares touches the Core diagonally. Touch it along a side and the board says no. Politely, but firmly.",
   ],
   controls: "R rotate · F flip · Enter place · Esc put down",
   board: "paper",
@@ -72,13 +72,13 @@ const core: Chapter = {
     const d = D8;
     if (complete) {
       return [
-        { id: "linked", cell: lastPlaced[lastPlaced.length - 1] ?? at(d, 4, 3), text: "that's a link.\ncorner to corner.", dir: "ne", mark: "star" },
+        { id: "linked", cell: lastPlaced[lastPlaced.length - 1] ?? at(d, 4, 3), text: "corner to corner.\nthat's the whole trick", dir: "ne", mark: "star" },
       ];
     }
     return [
-      { id: "core", cell: at(d, 3, 4), text: "your Core.\nit glows. it's yours.", dir: "s", reach: 1.5 },
+      { id: "core", cell: at(d, 3, 4), text: "your Core.\nstart here", dir: "s", reach: 1.5 },
       { id: "hook", cell: at(d, 4, 3), text: "hook on here,\nat a corner", dir: "n", reach: 1.3, mark: "circle" },
-      { id: "tide", cell: at(d, 1, 1), text: "Tide. napping\nthis chapter", dir: "s", tone: "seat-1", reach: 1 },
+      { id: "tide", cell: at(d, 1, 1), text: "Tide, your rival.\nasleep, for now", dir: "s", tone: "seat-1", reach: 1 },
     ];
   },
   success: "That's a link.",
@@ -108,12 +108,12 @@ const corners: Chapter = {
   id: "corners",
   title: ["Corners ", "only", "."],
   short: "Corners only",
-  goal: "Reach the star. Each new shard must touch your light at a corner, never along a side.",
+  goal: "Reach the star. Each new piece must touch one of yours at a corner, never along a side.",
   body: [
-    "This is the whole game, really. Your colour spreads in diagonals and leaves gaps behind it, and other people end up living in your gaps.",
-    "The little ticks on the board are your attach points: empty cells where a new shard could hook on. Two shards will get you to the star if you aim them.",
+    "This is the whole game, really. Your colour spreads in diagonals and leaves gaps behind it, and other players move into your gaps like they pay rent.",
+    "The little ticks mark the empty squares where your next piece could touch a corner. Two pieces will get you to the star if you aim them.",
   ],
-  controls: "R rotate · F flip · scroll turns the shard too",
+  controls: "R rotate · F flip · scroll turns the piece too",
   board: "paper",
   build: () => buildGame(CORNERS_SPEC),
   steps: [
@@ -133,7 +133,7 @@ const corners: Chapter = {
     if (complete) return [{ id: "got", cell: STAR, text: "two hops,\nall corners", dir: "sw", mark: "star" }];
     const notes: Note[] = [{ id: "star", cell: STAR, text: "get here", dir: "w", mark: "star", reach: 1.4 }];
     if (view.cells[at(d, 4, 5)] === OWNER.EMPTY) {
-      notes.push({ id: "face", cell: at(d, 4, 5), text: "flat against your\nown light? never.", dir: "se", mark: "cross", reach: 1.3 });
+      notes.push({ id: "face", cell: at(d, 4, 5), text: "side by side with\nyour own colour? nope", dir: "se", mark: "cross", reach: 1.3 });
     }
     return notes;
   },
@@ -183,8 +183,8 @@ const block: Chapter = {
   short: "Block",
   goal: "Tide wants the pocket below the wall. Take the gap before it does.",
   body: [
-    "You can't stop anyone from playing, but you can take the cell they need. The scribbled cells are scars: dead ground nobody can build on.",
-    "Tide's only way into the pocket is the one-cell gap in the wall. Put a shard through it and the whole pocket is yours to grow into later.",
+    "You can't stop anyone from playing, but you can take the square they need. The scribbled squares are scars: nobody can build on them.",
+    "Tide's only way into the pocket is the one-square gap in the wall. Put a piece through it and the whole pocket is yours to grow into later.",
   ],
   board: "paper",
   build: () => buildGame(BLOCK_SPEC),
@@ -210,7 +210,7 @@ const block: Chapter = {
     if (tideIn) return [{ id: "lost", cell: GATE, text: "Tide got there first", dir: "e", tone: "seat-1" }];
     return [
       { id: "gate", cell: GATE, text: "the only\nway in", dir: "sw", mark: "circle", reach: 1.3 },
-      { id: "threat", cell: at(D8, 3, 6), text: "Tide's next move,\nprobably", dir: "e", tone: "seat-1", outline: { cells: TIDE_THREAT, tone: "seat-1" }, reach: 1.4 },
+      { id: "threat", cell: at(D8, 3, 6), text: "Tide's next move,\nprobably. it's not subtle", dir: "e", tone: "seat-1", outline: { cells: TIDE_THREAT, tone: "seat-1" }, reach: 1.4 },
     ];
   },
   success: "Cut off. That pocket is all yours.",
@@ -243,12 +243,12 @@ const sparkIndex = () => getKit("shards").sparkIndex;
 
 const surges: Chapter = {
   id: "surges",
-  title: ["Nodes and ", "surges", "."],
+  title: ["Nodes and ", "power-ups", "."],
   short: "Nodes & surges",
   goal: "Grab the node, Leap the wall, then Spark into the one-cell gap.",
   body: [
-    "Nodes are the glowing diamonds. Cover one and you bank a charge. Charge buys surges.",
-    "Leap (2 charge) lets a shard link from up to two cells away, so walls stop being walls. Spark (1 charge) places a single cell, for gaps no shard fits.",
+    "Nodes are the glowing diamonds. Cover one and you earn a charge. Charge pays for power-ups.",
+    "Leap (2 charge) lets your next piece land up to two squares away from your colour, so walls stop being walls. Spark (1 charge) places a single square, for gaps no piece fits.",
   ],
   controls: "L leap · S spark",
   board: "paper",
@@ -284,8 +284,8 @@ const surges: Chapter = {
   notes: ({ step, complete }) => {
     if (complete) return [{ id: "done", cell: GAP, text: "charge well spent", dir: "ne", mark: "star", reach: 1.6 }];
     if (step === 0) return [{ id: "node", cell: NODE, text: "a node.\n+1 charge", dir: "s", mark: "circle", reach: 1.1 }];
-    if (step === 1) return [{ id: "wall", cell: at(D8, 4, 4), text: "a wall. leap it:\nlink from two away", dir: "e", reach: 1.2 }];
-    return [{ id: "gap", cell: GAP, text: "one cell wide.\nonly a spark fits", dir: "ne", mark: "circle", reach: 1.6 }];
+    if (step === 1) return [{ id: "wall", cell: at(D8, 4, 4), text: "a wall. Leap over it:\ntwo squares of reach", dir: "e", reach: 1.2 }];
+    return [{ id: "gap", cell: GAP, text: "one square wide.\nonly Spark fits", dir: "ne", mark: "circle", reach: 1.6 }];
   },
   success: "Charge spent well.",
 };
@@ -315,9 +315,9 @@ const shatter: Chapter = {
   id: "shatter",
   title: ["Break the ", "chain", "."],
   short: "Shatter",
-  goal: "Shatter the cell holding Tide's door open, then claim the space below.",
+  goal: "Shatter the square holding Tide's door open, then claim the space below.",
   body: [
-    "Shatter costs 3 charge and destroys one enemy cell. It leaves a scar: dead, unscorable, and nobody can build on it.",
+    "Shatter costs 3 charge and destroys one opponent square. It leaves a scar: it scores for nobody, and nobody can build on it.",
     "Use it to cut a chain, not to redecorate. It doesn't end your turn, so you still get to place afterwards.",
   ],
   controls: "X shatter",
@@ -329,7 +329,7 @@ const shatter: Chapter = {
       label: "Shatter the door · 3 charge",
       surges: ["shatter"],
       allow: () => false,
-      allowWhy: "shatter first: press Shatter, then pick the cell",
+      allowWhy: "shatter first: press Shatter, then pick the square",
       done: (ctx) => mine(ctx) && ctx.events.some((e) => e.type === "shattered") && !canReach(ctx.view, 1, BELOW),
       failed: (ctx) =>
         ctx.action.type === "shatter" ? "That one wasn't holding the door. Start over and try its neighbour." : stuck(ctx),
@@ -350,7 +350,7 @@ const shatter: Chapter = {
         { id: "door", cell: DOOR, text: "this one holds\nthe door open", dir: "e", mark: "circle", tone: "accent", reach: 1.2 },
         { id: "tide", cell: at(D8, 6, 4), text: "Tide can still\nget in here", dir: "se", tone: "seat-1", reach: 1.2 },
       ];
-    return [{ id: "scar", cell: DOOR, text: "a scar now.\ndead ground", dir: "e", reach: 1.2 }];
+    return [{ id: "scar", cell: DOOR, text: "a scar now.\nnobody builds here", dir: "e", reach: 1.2 }];
   },
   success: "Door closed. Space claimed.",
 };
@@ -384,10 +384,10 @@ const fog: Chapter = {
   id: "fog",
   title: ["Into the ", "fog", "."],
   short: "Fog",
-  goal: "Drop the long shard on the marked spot, see what happens, then Scan.",
+  goal: "Drop the long piece on the marked spot, see what happens, then Scan.",
   body: [
-    "Under fog you only see two cells out from your own light. Everything else is memory, and memory lies.",
-    "Place onto something you couldn't see and it misfires: the shard comes back to you, but the turn is gone. Scan (1 charge) lights up the whole board until your next turn ends.",
+    "In fog you only see two squares out from your own pieces. Everything else is what you remember, and Tide has been busy since then.",
+    "Place onto a piece you couldn't see and it misfires: you keep the piece, but your turn is over. Scan (1 charge) shows the whole board until your next turn ends.",
   ],
   controls: "C scan",
   board: "paper",
@@ -423,7 +423,7 @@ const fog: Chapter = {
       return [
         { id: "spot", cell: at(D10, 5, 3), text: "looks empty.\nlooks.", dir: "s", outline: { cells: FOG_SUGGEST, tone: "accent" }, reach: 1.6 },
       ];
-    if (step === 1) return [{ id: "oops", cell: HIDDEN_TARGET, text: "Tide was hiding here.\nturn lost, shard kept", dir: "s", tone: "seat-1", reach: 2 }];
+    if (step === 1) return [{ id: "oops", cell: HIDDEN_TARGET, text: "Tide was hiding here.\nturn lost, piece kept", dir: "s", tone: "seat-1", reach: 2 }];
     return [{ id: "clear", cell: at(D10, 7, 5), text: "everything in sight,\nfor now", dir: "s", reach: 1.4 }];
   },
   success: "Seen, then placed.",
@@ -481,9 +481,9 @@ const stack: Chapter = {
   id: "stack",
   title: ["Up a ", "dimension", "."],
   short: "Up a dimension",
-  goal: "Stack a shard on top of Tide's tower to crown that column.",
+  goal: "Stack a piece on top of Tide's tower to crown that column.",
   body: [
-    "In 3D every cube needs something underneath it. And because you can never touch your own light along a face, you can't stack on yourself. You climb on everyone else.",
+    "In 3D every cube needs something underneath it. And because your own cubes can never touch along a face, you can't stack on yourself. You climb on everyone else.",
     "The top cube of each column is a crown, worth a point at the end. Tide climbed on you; return the favour.",
   ],
   controls: "drag to orbit · R rotate · T tip · G roll",
@@ -531,12 +531,12 @@ const graduate: Chapter = {
   id: "graduate",
   title: ["Your first ", "game", "."],
   short: "Graduation",
-  goal: "A real game on a small board, seven shards each. Beat Ember, or at least make it sweat.",
+  goal: "A real game on a small board, seven pieces each. Beat Ember, or at least make it sweat.",
   body: [
-    "Same rules, nothing scripted. Ember is the gentlest of the bots. Most cells wins, and placing your whole kit adds 5.",
+    "Same rules, nothing scripted. Ember is the gentlest of the bots. Most squares wins, and placing every piece adds 5.",
     "Use the nodes. Block when you can. Corners only.",
   ],
-  controls: "1–7 pick a shard · R F turn it · L S X surges",
+  controls: "1–7 pick a piece · R F turn it · L S X power-ups",
   board: "paper",
   build: () => buildFinal(),
   steps: [

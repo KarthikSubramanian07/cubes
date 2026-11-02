@@ -99,9 +99,9 @@ export function RoomLobby({
           ))}
         </h1>
         <HandNote className="lobby__code-note annot" tilt={-4} arrow="down-left" size="sm">
-          read it out loud. no I, no O,{"\n"}no 0, no 1. you're welcome.
+          no I, O, 0 or 1, so nobody{"\n"}asks "is that a zero?"
         </HandNote>
-        <CopyField label="Invite link" value={shareUrl} onCopied={() => toast.show("Link copied. Go find some friends.")} />
+        <CopyField label="Invite link" value={shareUrl} onCopied={() => toast.show("Link copied. Go round them up.")} />
         {canShare && (
           <Button
             variant="quiet"
@@ -219,9 +219,9 @@ export function RoomLobby({
             </svg>
             <div>
               <p className="lobby__empty-title">
-                Waiting for <em>friends</em>.
+                Waiting for <em>players</em>.
               </p>
-              <p className="muted">Send them the link. The room stays open while you're here; empty seats can be filled with bots if your friends are slow.</p>
+              <p className="muted">Send them the link. The room stays open while you're here, and the host can fill empty seats with bots if anyone's running late.</p>
             </div>
             <HandNote className="lobby__empty-note annot" tilt={-5} arrow="up" size="sm">
               they're probably{"\n"}finding their shoes

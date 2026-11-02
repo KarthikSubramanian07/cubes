@@ -89,20 +89,20 @@ function describe(p: GameScreenProps, e: GameEvent): string | null {
   const n = (s: number) => seatName(p, s);
   switch (e.type) {
     case "node":
-      return `${n(e.seat)} grabbed a node. +1 charge`;
+      return `${n(e.seat)} took a node. +1 charge`;
     case "shattered":
-      return `${n(e.seat)} shattered a piece of ${n(e.victim)}'s light`;
+      return `${n(e.seat)} destroyed one of ${n(e.victim)}'s squares. rude.`;
     case "misfire":
-      return e.seat === p.seat ? "misfire. something was hiding in the fog" : `${n(e.seat)} misfired into the fog`;
+      return e.seat === p.seat ? "a hidden piece was in the way. you keep the piece, the fog keeps your turn" : `${n(e.seat)} walked into a hidden piece`;
     case "scanned":
-      return `${n(e.seat)} lit up the whole board`;
+      return `${n(e.seat)} used Scan and can see everything now`;
     case "dark":
-      return `${n(e.seat)} went dark`;
+      return `${n(e.seat)} is out of moves and watches from here`;
     case "storm":
-      return "the storm took the edge of the board";
+      return "the storm destroyed the outer ring. mind the edge";
     case "placed":
-      if (e.leap) return `${n(e.seat)} leapt a gap`;
-      if (e.spark) return `${n(e.seat)} sparked a single cell`;
+      if (e.leap) return `${n(e.seat)} used Leap`;
+      if (e.spark) return `${n(e.seat)} used Spark`;
       return null;
     default:
       return null;
@@ -121,24 +121,25 @@ export function logLine(p: GameScreenProps, e: GameEvent): { text: string; seat:
   const n = (s: number) => seatName(p, s);
   switch (e.type) {
     case "placed": {
-      if (e.hidden && e.cells.length === 0) return { text: `${n(e.seat)} moved somewhere in the fog`, seat: e.seat, kind: "quiet" };
-      const shard = e.spark ? "a spark" : `the ${p.kit.pieces[e.piece]?.name ?? "shard"}`;
-      return { text: `${n(e.seat)} ${e.leap ? "leapt in with" : "laid"} ${shard}`, seat: e.seat, kind: e.leap || e.spark ? undefined : "quiet" };
+      if (e.hidden && e.cells.length === 0) return { text: `${n(e.seat)} placed a piece out of sight`, seat: e.seat, kind: "quiet" };
+      if (e.spark) return { text: `${n(e.seat)} used Spark${e.leap ? " and Leap" : ""}`, seat: e.seat };
+      const name = p.kit.pieces[e.piece]?.name ?? "a piece";
+      return { text: `${n(e.seat)} placed ${name}${e.leap ? " with Leap" : ""}`, seat: e.seat, kind: e.leap ? undefined : "quiet" };
     }
     case "node":
-      return { text: `${n(e.seat)} grabbed a node`, seat: e.seat };
+      return { text: `${n(e.seat)} took a node`, seat: e.seat };
     case "shattered":
-      return { text: `${n(e.seat)} shattered ${n(e.victim)}'s light`, seat: e.seat };
+      return { text: `${n(e.seat)} destroyed a ${n(e.victim)} square`, seat: e.seat };
     case "misfire":
-      return { text: `${n(e.seat)} misfired into the fog`, seat: e.seat };
+      return { text: `${n(e.seat)} walked into a hidden piece`, seat: e.seat };
     case "scanned":
-      return { text: `${n(e.seat)} scanned the board`, seat: e.seat };
+      return { text: `${n(e.seat)} used Scan`, seat: e.seat };
     case "dark":
-      return { text: `${n(e.seat)} went dark`, seat: e.seat };
+      return { text: `${n(e.seat)} is out of moves`, seat: e.seat };
     case "storm":
-      return { text: "the storm took the edge", seat: null };
+      return { text: "storm: outer ring destroyed", seat: null };
     case "gameOver":
-      return { text: e.winners.length > 1 ? "a tie. shared light" : `${n(e.winners[0]!)} wins`, seat: e.winners.length === 1 ? e.winners[0]! : null };
+      return { text: e.winners.length > 1 ? "game over: a tie. everyone wins, technically" : `game over: ${n(e.winners[0]!)} wins`, seat: e.winners.length === 1 ? e.winners[0]! : null };
     default:
       return null;
   }
@@ -300,8 +301,8 @@ export function GameScreen(props: GameScreenProps) {
           {props.roomCode && <span className="g-room-code">room {props.roomCode}</span>}
           <span className="g-round">round {view.round}</span>
           {view.nextStorm !== null && view.config.storm && (
-            <span className="g-storm-chip" title="The outer ring collapses into ash">
-              storm in {Math.max(0, view.nextStorm - view.round)}
+            <span className="g-storm-chip" title="The outer ring of the board will be destroyed">
+              storm in {Math.max(0, view.nextStorm - view.round)} {view.nextStorm - view.round === 1 ? "round" : "rounds"}
             </span>
           )}
         </div>
@@ -361,7 +362,7 @@ export function GameScreen(props: GameScreenProps) {
       </ol>
 
       <ol className="g-log" ref={logRef} aria-label="Match log" aria-live="off">
-        {log.length === 0 && <li className="g-log-empty">the margin. what happens goes here</li>}
+        {log.length === 0 && <li className="g-log-empty">nothing yet. somebody has to go first</li>}
         {log.map((l) => (
           <li
             key={l.id}
@@ -380,7 +381,7 @@ export function GameScreen(props: GameScreenProps) {
         // In 3D the wheel zooms the camera; on paper it turns the shard.
         if (effectiveRenderer === "paper" && ctl.piece !== null) ctl.transform(e.deltaY > 0 ? "rotate" : "rotateBack");
       }}>
-        <Suspense fallback={<div className="g-board-loading">sharpening pencils…</div>}>
+        <Suspense fallback={<div className="g-board-loading">setting out the pieces…</div>}>
           <Board
             view={view}
             ghost={ctl.ghost ? { cells: ctl.ghost.cells, seat: ctl.ghost.seat, valid: ctl.ghost.valid } : null}
@@ -521,7 +522,7 @@ export function GameScreen(props: GameScreenProps) {
                   className={`g-surge ${ctl.piece === kit.sparkIndex ? "on" : ""}`}
                   disabled={!myTurn || charge < 1}
                   onClick={() => ctl.selectPiece(kit.sparkIndex)}
-                  title="Spark (S): place a single cell. 1 charge"
+                  title="Spark (S): place a single square instead of a piece. Costs 1 charge."
                 >
                   spark <small>1</small>
                 </button>
@@ -529,7 +530,7 @@ export function GameScreen(props: GameScreenProps) {
                   className={`g-surge ${ctl.leap ? "on" : ""}`}
                   disabled={!myTurn || charge < 2}
                   onClick={() => ctl.setLeap(!ctl.leap)}
-                  title="Leap (L): link from up to two cells away. 2 charge"
+                  title="Leap (L): your next piece may go up to two squares from your colour. Costs 2 charge."
                 >
                   leap <small>2</small>
                 </button>
@@ -537,7 +538,7 @@ export function GameScreen(props: GameScreenProps) {
                   className={`g-surge ${ctl.mode === "shatter" ? "on" : ""}`}
                   disabled={!myTurn || charge < 3 || view.shatteredThisTurn}
                   onClick={() => ctl.setMode("shatter")}
-                  title="Shatter (X): destroy one enemy cell. 3 charge"
+                  title="Shatter (X): destroy one opponent square. Costs 3 charge."
                 >
                   shatter <small>3</small>
                 </button>
@@ -546,7 +547,7 @@ export function GameScreen(props: GameScreenProps) {
                     className="g-surge"
                     disabled={!myTurn || charge < 1 || view.scanning}
                     onClick={ctl.scan}
-                    title="Scan (C): see the whole board until your next turn ends. 1 charge"
+                    title="Scan (C): see the whole board until your next turn ends. Costs 1 charge."
                   >
                     scan <small>1</small>
                   </button>
@@ -567,7 +568,7 @@ export function GameScreen(props: GameScreenProps) {
               )}
               {!over && props.onResign && resigning && (
                 <span className="g-resign-ask" role="group" aria-label="Confirm resign">
-                  <span className="g-hand">go dark for good?</span>
+                  <span className="g-hand">resign? no hard feelings</span>
                   <button
                     className="g-quiet danger"
                     autoFocus
@@ -586,7 +587,7 @@ export function GameScreen(props: GameScreenProps) {
             </div>
           </>
         )}
-        {seat === null && <p className="g-spectating g-hand">just watching. enjoy the light show</p>}
+        {seat === null && <p className="g-spectating g-hand">you're watching. no backseat placing</p>}
         {props.aside}
       </section>
 
@@ -597,11 +598,11 @@ export function GameScreen(props: GameScreenProps) {
               no peeking
             </p>
             <h2>
-              Pass it to <em style={{ color: color(props.handoff) }}>{seatName(props, props.handoff)}</em>
+              Pass to <em style={{ color: color(props.handoff) }}>{seatName(props, props.handoff)}</em>
             </h2>
-            <p>The fog only works if everyone looks away. Ready?</p>
+            <p>Fog is on, so only {seatName(props, props.handoff)} should look. Everyone else, admire the ceiling.</p>
             <button className="g-btn-primary" autoFocus onClick={props.onAcceptHandoff}>
-              I'm {seatName(props, props.handoff)}, show me my board
+              I'm {seatName(props, props.handoff)}, show my board
             </button>
           </div>
         </div>
@@ -637,7 +638,7 @@ function GameOver(props: GameScreenProps & { onPeek(): void }) {
   return (
     <div className="g-overlay over" role="dialog" aria-modal="true" aria-label="Game over">
       <div className="g-sheet">
-        <p className="g-hand">{won ? (tie ? "shared the light" : "you lit the most!") : seat === null ? "that's the game" : "next time"}</p>
+        <p className="g-hand">{won ? (tie ? "a tie. split the glory" : "you win!") : seat === null ? "game over" : "not this time"}</p>
         <h2>
           {tie ? "A tie between " : ""}
           {winners.map((w, i) => (
@@ -654,12 +655,12 @@ function GameOver(props: GameScreenProps & { onPeek(): void }) {
               <span className="g-seat-dot" />
               <span>{seatName(props, s)}</span>
               <strong>{scores[s]}</strong>
-              {view.seats[s]!.piecesLeft === 0 && <small className="g-hand">clean sweep +5</small>}
+              {view.seats[s]!.piecesLeft === 0 && <small className="g-hand">+5 for placing every piece</small>}
             </li>
           ))}
         </ol>
         <p className="g-muted">
-          {lit} cells lit in {view.round} rounds.
+          {lit} squares covered in {view.round} rounds.
         </p>
         <div className="g-row">
           {props.onRematch && (
@@ -688,8 +689,8 @@ function Help({ three, arena, fog, onClose }: { three: boolean; arena: boolean; 
   return (
     <div className="g-overlay help" role="dialog" aria-modal="true" aria-label="Controls" onClick={onClose}>
       <div className="g-sheet" onClick={(e) => e.stopPropagation()}>
-        <p className="g-hand">the short version</p>
-        <h2>Corners only. Never a face.</h2>
+        <p className="g-hand">how to play</p>
+        <h2>Touch your own pieces only at corners.</h2>
         <p>
           Each piece must touch one of your own pieces at a corner, and never along a {three ? "face" : "side"}. Touch
           anyone else's pieces however you like. If none of your pieces fit, you're out, but everything you placed still scores.

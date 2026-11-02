@@ -80,7 +80,7 @@ function Online({ room, code, onLeave }: Props) {
   const legal = (leap: boolean): Placement[] => (ready && mySeat !== null ? gameFor(view).legal(mySeat, { leap }) : []);
 
   const submit = async (action: Action) => {
-    if (mySeat === null) return { ok: false as const, reason: "you're watching this one" };
+    if (mySeat === null) return { ok: false as const, reason: "you're watching this game" };
     const local = gameFor(view).check(mySeat, action);
     if (!local.ok) return local;
     room.send({ t: "action", action, ply: view.ply });
@@ -91,7 +91,7 @@ function Online({ room, code, onLeave }: Props) {
   const clock = room.clock && room.clock.endsAt !== null ? { seat: room.clock.seat, endsAt: room.clock.endsAt } : null;
   const title = lobby.preset === "custom" ? "Custom" : PRESET_TITLES[lobby.preset];
 
-  if (!kit) return <div className="game paper g-board-loading">sharpening pencils…</div>;
+  if (!kit) return <div className="game paper g-board-loading">loading the board…</div>;
 
   return (
     <GameScreen
@@ -169,7 +169,7 @@ function Chatter({ room }: { room: UseRoom }) {
       {open && (
         <>
           <ol className="g-chat-lines" ref={listRef} aria-live="polite">
-            {lines.length === 0 && <li className="g-chat-empty hand">say something nice. or don't</li>}
+            {lines.length === 0 && <li className="g-chat-empty hand">no messages yet</li>}
             {lines.map((l) => (
               <li key={l.key} className={l.emote ? "emote" : ""}>
                 <strong style={{ color: l.seat !== null ? SEAT_COLORS[l.seat] : undefined }}>{l.name}</strong> {l.text}
@@ -190,7 +190,7 @@ function Chatter({ room }: { room: UseRoom }) {
               value={text}
               maxLength={MAX_CHAT_CHARS}
               onChange={(e) => setText(e.target.value)}
-              placeholder="type, then enter"
+              placeholder="type a message, then press enter"
               aria-label="Chat message"
             />
           </form>

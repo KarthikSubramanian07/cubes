@@ -50,10 +50,10 @@ export function explainPlacement(view: View, seat: number, cells: number[] | nul
   for (const c of cells) {
     const o = view.cells[c]!;
     if (o === OWNER.EMPTY) continue;
-    if (o === OWNER.SCAR) return { problem: "scar", cell: c, text: "that's a scar. dead ground, nobody builds there" };
+    if (o === OWNER.SCAR) return { problem: "scar", cell: c, text: "that square is a scar. nothing goes there, ever" };
     if (o === own) return { problem: "occupied", cell: c, text: "you already live there" };
     if (isSeat(o)) return { problem: "occupied", cell: c, text: "someone already lives there" };
-    return { problem: "occupied", cell: c, text: "that cell is taken" };
+    return { problem: "occupied", cell: c, text: "that square is taken" };
   }
   const { face, link } = neighbourTables(cfg);
   if (cfg.gravity) {
@@ -76,13 +76,13 @@ export function explainPlacement(view: View, seat: number, cells: number[] | nul
       if (cfg.gravity && f === c - cfg.dims[0] * cfg.dims[1]) {
         return { problem: "face", cell: f, text: "you can't stack on your own cubes. climb on theirs." };
       }
-      return { problem: "face", cell: f, text: `flat against your own light along a ${three ? "face" : "side"}. never.` };
+      return { problem: "face", cell: f, text: `your own pieces can't touch along a ${three ? "face" : "side"}. corners only.` };
     }
   }
   const lights = (o: number) => o === own;
   if (opts.leap) {
     const ok = cells.some((c) => chebyshevBall(view, c, 2).some((b) => !cells.includes(b) && lights(view.cells[b]!)));
-    if (!ok) return { problem: "too-far", cell: cells[0]!, text: "too far. a leap reaches two cells from your light" };
+    if (!ok) return { problem: "too-far", cell: cells[0]!, text: "too far. Leap reaches two squares from your pieces, not three" };
     return null;
   }
   const linked = cells.some((c) => link[c]!.some((n) => lights(view.cells[n]!)));
