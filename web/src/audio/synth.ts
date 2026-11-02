@@ -27,7 +27,7 @@ export function isOfflineContext(ctx: BaseAudioContext): boolean {
 /** Envelope floor: exponential ramps cannot reach zero. */
 const FLOOR = 0.0001;
 /** Hard cap on simultaneously sounding sources. New cues are dropped above it. */
-export const MAX_VOICES = 96;
+export const MAX_VOICES = 160;
 
 export interface FilterOpts {
   type: BiquadFilterType;
