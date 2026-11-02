@@ -101,7 +101,8 @@ impl GameConfig {
                 ..base
             },
             "stack" => GameConfig {
-                dims: if seats == 2 { [6, 6, 6] } else { [8, 8, 8] },
+                // 6x6x6 jammed for two: a third of the kit went unplayed (see docs/BALANCE.md).
+                dims: if seats == 2 { [8, 8, 6] } else { [8, 8, 8] },
                 gravity: true,
                 crowns: true,
                 kit: KitKind::Cubes,
@@ -109,7 +110,8 @@ impl GameConfig {
                 ..base
             },
             "orbit" => GameConfig {
-                dims: [7, 7, 7],
+                // Two players never meet on 7x7x7, which turns it into a node race.
+                dims: if seats == 2 { [6, 6, 6] } else { [7, 7, 7] },
                 kit: KitKind::Cubes,
                 nodes: if seats == 2 { 4 } else { 8 },
                 ..base

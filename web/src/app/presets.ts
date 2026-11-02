@@ -117,7 +117,7 @@ export const PRESETS: readonly PresetInfo[] = [
     name: "stack",
     label: "Stack",
     flavor: "Gravity is on. You climb on other people.",
-    blurb: "8×8×8 (6×6×6 for two). Crown columns for points.",
+    blurb: "8×8×8 (8×8×6 for two). Crown columns for points.",
     dimension: "3d",
     seats: [2, 3, 4],
     defaultSeats: 4,
@@ -126,7 +126,7 @@ export const PRESETS: readonly PresetInfo[] = [
     name: "orbit",
     label: "Orbit",
     flavor: "A floating cube of space. Corners in every direction.",
-    blurb: "7×7×7, no gravity. Turn it around a lot.",
+    blurb: "7×7×7 (6×6×6 for two), no gravity. Turn it around a lot.",
     dimension: "3d",
     seats: [2, 3, 4],
     defaultSeats: 4,
@@ -145,7 +145,7 @@ function clone(config: GameConfig): GameConfig {
 
 /**
  * The preset's config at a given seat count, applying the documented
- * small-table sizes (Plane 14×14 and Stack 6×6×6 for two players).
+ * small-table sizes (Plane 14×14 and Stack 8×8×6 for two players).
  */
 export function presetConfig(name: PresetName, seats?: number): GameConfig {
   const info = PRESET_BY_NAME[name];
@@ -157,7 +157,8 @@ export function presetConfig(name: PresetName, seats?: number): GameConfig {
     if (config.arena) config.nodes = config.kit === "cubes" ? 4 : 6;
     if (name === "plane" || name === "pure" || name === "storm") config.dims = [14, 14, 1];
     if (name === "fog" || name === "torus") config.dims = [14, 14, 1];
-    if (name === "stack") config.dims = [6, 6, 6];
+    if (name === "stack") config.dims = [8, 8, 6];
+    if (name === "orbit") config.dims = [6, 6, 6];
   }
   return config;
 }

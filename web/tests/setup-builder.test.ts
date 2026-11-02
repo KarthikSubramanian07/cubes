@@ -12,7 +12,7 @@ describe("presets", () => {
     expect(PRESET_CONFIGS.torus).toMatchObject({ dims: [18, 18, 1], topology: "torus" });
     expect(PRESET_CONFIGS.teams).toMatchObject({ seats: 4, teams: true, sharedLight: true });
     expect(PRESET_CONFIGS.stack).toMatchObject({ dims: [8, 8, 8], gravity: true, crowns: true, kit: "cubes" });
-    expect(presetConfig("stack", 2).dims).toEqual([6, 6, 6]);
+    expect(presetConfig("stack", 2).dims).toEqual([8, 8, 6]);
     expect(PRESET_CONFIGS.orbit).toMatchObject({ dims: [7, 7, 7], gravity: false, kit: "cubes" });
   });
 
