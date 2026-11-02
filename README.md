@@ -43,6 +43,15 @@ That one rule turns out to be bottomless, so we kept going.
 - **Learn it in three minutes.** [First light](https://playcubes.pages.dev/learn)
   is an interactive tutorial on real boards, with hand-written notes that
   point at exactly what you did wrong.
+- **A daily board.** [/daily](https://playcubes.pages.dev/daily) deals the same
+  seeded board to everyone each day (UTC) against Flare, with the mode rotating
+  through the week. One counted try, no undo, and a Wordle-style emoji grid
+  to brag with.
+- **Replays.** After any game, local or online, scrub back through every move.
+  Positions are rebuilt from the seed and the move log by the Rust engine, so
+  they are exact; online, the room hands the finished match to every player.
+- **A record that's yours.** Wins and losses against each bot, best score and
+  streaks, kept in your browser and nowhere else.
 - **Balanced with data, not vibes.** Bots played thousands of games against
   each other to size the boards and to work out that the second player in a
   two-player game deserves two charge in hand. The numbers are in
