@@ -49,6 +49,34 @@ describe("LocalMatch", () => {
     m.dispose();
   });
 
+  it("can be disposed twice, as React's cleanups may do", () => {
+    let disposed = 0;
+    const m = new LocalMatch({
+      config: getPreset("duel", 2),
+      seats: [{ kind: "bot", name: "A", level: "ember" }, { kind: "human", name: "You" }],
+      seed: 2,
+      bots: { think: () => new Promise(() => {}), dispose: () => void disposed++ },
+    });
+    m.dispose();
+    expect(() => m.dispose()).not.toThrow();
+    expect(disposed).toBe(1);
+  });
+
+  it("rematch frees the old match once", () => {
+    let disposed = 0;
+    const bots = { think: () => new Promise<null>(() => {}), dispose: () => void disposed++ };
+    const m = new LocalMatch({
+      config: getPreset("duel", 2),
+      seats: [{ kind: "human", name: "You" }, { kind: "bot", name: "A", level: "ember" }],
+      seed: 3,
+      bots,
+    });
+    const next = m.rematch();
+    m.dispose();
+    expect(disposed).toBe(1);
+    next.dispose();
+  });
+
   it("rejects moves out of turn", () => {
     const m = new LocalMatch({
       config: getPreset("duel", 2),

@@ -131,6 +131,9 @@ function LocalGame() {
     const m = new LocalMatch({ config, seats: padSeats(setup.seats, config.seats) });
     setKit(getKit(config.kit));
     setMatch(m);
+    // A new setup (or StrictMode's double run) must not leave the old match's
+    // engine and bot worker running in the background.
+    return () => m.dispose();
   }, [ready, setup]);
 
   // Subscribe to whichever match is current; dispose it on unmount.
