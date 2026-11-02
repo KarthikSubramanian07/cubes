@@ -699,10 +699,20 @@
   .g-hand-arrow {
     display: none;
   }
+  /* Toasts go up top on phones: at the bottom they ran into the turn note. */
   .g-toasts {
-    top: auto;
-    bottom: 10px;
+    top: 8px;
     right: 10px;
+  }
+  .g-toast {
+    font-size: 18px;
+    max-width: 66vw;
+  }
+  .g-error-note {
+    top: auto;
+    bottom: 42px;
+    font-size: 20px;
+    max-width: 86vw;
   }
 }
 
