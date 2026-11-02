@@ -1,0 +1,19 @@
+[package]
+name = "cubes-rooms"
+description = "Authoritative realtime rooms for cubes: one Cloudflare Durable Object per room."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cubes-engine = { path = "../engine" }
+serde.workspace = true
+serde_json.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+worker = "0.8"
+getrandom = { version = "0.4", features = ["wasm_js"] }
