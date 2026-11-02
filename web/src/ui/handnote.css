@@ -1,0 +1,141 @@
+.handnote {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 2px;
+  color: var(--note-color, var(--accent));
+  transform: rotate(var(--tilt, -3deg));
+  transform-origin: left center;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.handnote__text {
+  font: 500 var(--note-size, 24px) / 1.02 var(--hand);
+  letter-spacing: 0.005em;
+  padding: 0 0.12em;
+  white-space: pre;
+}
+
+.handnote--sm {
+  --note-size: 20px;
+}
+.handnote--md {
+  --note-size: clamp(21px, 1.2vw + 12px, 26px);
+}
+.handnote--lg {
+  --note-size: clamp(25px, 1.6vw + 14px, 32px);
+}
+
+.handnote__text--hl {
+  background: linear-gradient(104deg, transparent 1%, var(--hl) 3%, var(--hl-edge) 96%, transparent 99%) 0 88% / 100% 44%
+    no-repeat;
+}
+
+.handnote__arrow {
+  flex: none;
+  max-width: none;
+  width: 58px;
+  height: auto;
+  margin-top: 0.5em;
+}
+
+.handnote__arrow path {
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Arrow placement by direction. */
+.handnote--down,
+.handnote--up {
+  flex-direction: column;
+  align-items: center;
+}
+.handnote--down .handnote__arrow,
+.handnote--up .handnote__arrow {
+  width: 22px;
+  margin: 2px 0 0;
+}
+.handnote--up {
+  flex-direction: column-reverse;
+}
+.handnote--up .handnote__arrow {
+  margin: 0 0 2px;
+}
+.handnote--down-left,
+.handnote--left,
+.handnote--up-left {
+  flex-direction: row-reverse;
+}
+.handnote--up-left,
+.handnote--up-right {
+  align-items: flex-end;
+}
+.handnote--up-left .handnote__arrow,
+.handnote--up-right .handnote__arrow {
+  margin: 0 0 0.6em;
+}
+.handnote--left .handnote__arrow,
+.handnote--right .handnote__arrow {
+  width: 54px;
+  margin-top: 0.2em;
+}
+
+/* Tones */
+.tone-accent {
+  --note-color: var(--accent);
+}
+.tone-ink {
+  --note-color: var(--ink);
+}
+.tone-muted {
+  --note-color: var(--muted);
+}
+.tone-seat-0 {
+  --note-color: var(--seat-0-ink);
+}
+.tone-seat-1 {
+  --note-color: var(--seat-1-ink);
+}
+.tone-seat-2 {
+  --note-color: var(--seat-2-ink);
+}
+.tone-seat-3 {
+  --note-color: var(--seat-3-ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .handnote__text {
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+      opacity 600ms var(--ease-out),
+      transform 800ms var(--ease-out);
+    transition-delay: var(--delay, 0ms);
+  }
+  .handnote[data-inview="true"] .handnote__text {
+    opacity: 1;
+    transform: none;
+  }
+  .handnote__text--hl {
+    background-size: 0% 44%;
+    transition:
+      opacity 600ms var(--ease-out),
+      transform 800ms var(--ease-out),
+      background-size 900ms var(--ease-out) calc(var(--delay, 0ms) + 250ms);
+  }
+  .handnote[data-inview="true"] .handnote__text--hl {
+    background-size: 100% 44%;
+  }
+  .handnote__arrow path {
+    stroke-dasharray: 1 2;
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  .handnote[data-inview="true"] .handnote__arrow path {
+    animation: doodle-draw 1100ms var(--ease-out) both;
+    animation-delay: calc(var(--delay, 0ms) + 260ms + var(--i, 0) * 420ms);
+  }
+}
