@@ -58,7 +58,7 @@ fn main() {
                 let rec = play::play(&args, &cfg, g);
                 results.lock().unwrap()[g] = Some(rec);
                 let d = done.fetch_add(1, Ordering::Relaxed) + 1;
-                if !args.quiet && !args.json && (d % 50 == 0 || d == args.games) {
+                if !args.quiet && !args.json && (d.is_multiple_of(50) || d == args.games) {
                     eprint!("\r  {d}/{} games", args.games);
                 }
             });

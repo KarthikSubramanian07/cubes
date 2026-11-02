@@ -128,9 +128,8 @@ pub fn parse(raw: &[String]) -> Result<Args, String> {
             }
             "--patch" => {
                 let v = need(i, flag)?;
-                a.patch = Some(
-                    serde_json::from_str(&v).map_err(|e| format!("--patch: bad JSON: {e}"))?,
-                );
+                a.patch =
+                    Some(serde_json::from_str(&v).map_err(|e| format!("--patch: bad JSON: {e}"))?);
                 i += 1;
             }
             "--json" => a.json = true,

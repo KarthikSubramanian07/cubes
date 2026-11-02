@@ -12,7 +12,7 @@ use serde::Serialize;
 use cubes_engine::game::{Ctx, GenMode, Move, Scratch, State};
 use cubes_engine::rng::Rng;
 use cubes_engine::session::ctx_for;
-use cubes_engine::{Bot, GameConfig, Level, Phase};
+use cubes_engine::{Board, Bot, GameConfig, Level, Phase};
 
 use crate::play::now_ms;
 
@@ -24,6 +24,11 @@ pub struct BenchRow {
     pub avg_moves: f64,
     /// Nanoseconds per call.
     pub gen_normal_ns: f64,
+    /// The reference (pre-bitboard) generator on the same positions.
+    pub gen_naive_ns: f64,
+    pub speedup: f64,
+    /// Generation from an incrementally maintained `Board`.
+    pub gen_board_ns: f64,
     pub all_moves_ns: f64,
     pub has_any_move_ns: f64,
     pub evaluate_ns: f64,
@@ -74,7 +79,9 @@ fn policy_step(ctx: &Ctx, st: &mut State, rng: &mut Rng, scratch: &mut Scratch) 
     let mut moves: Vec<Move> = Vec::new();
     st.gen_moves(ctx, seat, GenMode::Normal, scratch, &mut moves, false);
     if moves.is_empty() {
-        st.all_moves(ctx, seat, scratch).into_iter().for_each(|m| moves.push(m));
+        st.all_moves(ctx, seat, scratch)
+            .into_iter()
+            .for_each(|m| moves.push(m));
     }
     let mut ev = Vec::new();
     if moves.is_empty() {
@@ -105,7 +112,7 @@ fn positions(ctx: &Ctx, case: &Case, games: u64) -> (Vec<State>, f64) {
         let mut rng = Rng::new(seed * 31 + 7);
         let t0 = Instant::now();
         while st.phase == Phase::Playing {
-            if st.ply >= case.window.0 && st.ply < case.window.1 && st.ply % 2 == 0 {
+            if st.ply >= case.window.0 && st.ply < case.window.1 && st.ply.is_multiple_of(2) {
                 out.push(st.clone());
             }
             policy_step(ctx, &mut st, &mut rng, &mut scratch);
@@ -115,18 +122,26 @@ fn positions(ctx: &Ctx, case: &Case, games: u64) -> (Vec<State>, f64) {
     (out, game_us / games as f64)
 }
 
+/// Nanoseconds per call: the fastest of several trials, which is the most
+/// stable estimate on a machine that is busy with other work.
 fn time_ns(reps: usize, positions: &[State], mut f: impl FnMut(&State)) -> f64 {
-    // Warm up.
     for st in positions.iter().take(4) {
         f(st);
     }
-    let t0 = Instant::now();
-    for _ in 0..reps {
-        for st in positions {
-            f(st);
+    const TRIALS: usize = 9;
+    let per = reps.div_ceil(TRIALS).max(1);
+    let mut best = f64::MAX;
+    for _ in 0..TRIALS {
+        let t0 = Instant::now();
+        for _ in 0..per {
+            for st in positions {
+                f(st);
+            }
         }
+        let ns = t0.elapsed().as_secs_f64() * 1e9 / (per * positions.len()) as f64;
+        best = best.min(ns);
     }
-    t0.elapsed().as_secs_f64() * 1e9 / (reps * positions.len()) as f64
+    best
 }
 
 pub fn run(reps: usize) -> Vec<BenchRow> {
@@ -140,12 +155,58 @@ pub fn run(reps: usize) -> Vec<BenchRow> {
         let mut total_moves = 0usize;
         for st in &pos {
             buf.clear();
-            st.gen_moves(&ctx, st.turn as usize, GenMode::Normal, &mut scratch, &mut buf, false);
+            st.gen_moves(
+                &ctx,
+                st.turn as usize,
+                GenMode::Normal,
+                &mut scratch,
+                &mut buf,
+                false,
+            );
             total_moves += buf.len();
         }
         let gen_normal_ns = time_ns(reps, &pos, |st| {
             buf.clear();
-            st.gen_moves(&ctx, st.turn as usize, GenMode::Normal, &mut scratch, &mut buf, false);
+            st.gen_moves(
+                &ctx,
+                st.turn as usize,
+                GenMode::Normal,
+                &mut scratch,
+                &mut buf,
+                false,
+            );
+            std::hint::black_box(&buf);
+        });
+        let gen_naive_ns = time_ns(reps.div_ceil(4), &pos, |st| {
+            buf.clear();
+            st.gen_moves_naive(
+                &ctx,
+                st.turn as usize,
+                GenMode::Normal,
+                &mut scratch,
+                &mut buf,
+                false,
+            );
+            std::hint::black_box(&buf);
+        });
+        let boards: Vec<Board> = pos
+            .iter()
+            .map(|st| Board::from_cells(&ctx, &st.cells))
+            .collect();
+        let mut bi = 0usize;
+        let gen_board_ns = time_ns(reps, &pos, |st| {
+            buf.clear();
+            let seat = st.turn as usize;
+            boards[bi % boards.len()].gen_moves(
+                &ctx,
+                seat,
+                &st.seats[seat].pieces,
+                GenMode::Normal,
+                &mut scratch,
+                &mut buf,
+                false,
+            );
+            bi += 1;
             std::hint::black_box(&buf);
         });
         let all_moves_ns = time_ns(reps.div_ceil(4), &pos, |st| {
@@ -163,6 +224,9 @@ pub fn run(reps: usize) -> Vec<BenchRow> {
             positions: pos.len(),
             avg_moves: total_moves as f64 / pos.len().max(1) as f64,
             gen_normal_ns,
+            gen_naive_ns,
+            speedup: gen_naive_ns / gen_normal_ns,
+            gen_board_ns,
             all_moves_ns,
             has_any_move_ns,
             evaluate_ns,
@@ -175,16 +239,29 @@ pub fn run(reps: usize) -> Vec<BenchRow> {
 pub fn print_text(rows: &[BenchRow]) {
     println!("cubes-sim --bench (ns per call unless noted)");
     println!(
-        "  {:<26} {:>5} {:>7} {:>11} {:>11} {:>11} {:>11} {:>11}",
-        "case", "pos", "moves", "gen normal", "all_moves", "has_any", "evaluate", "game (us)"
+        "  {:<26} {:>5} {:>7} {:>11} {:>11} {:>8} {:>11} {:>11} {:>11} {:>11} {:>11}",
+        "case",
+        "pos",
+        "moves",
+        "gen naive",
+        "gen normal",
+        "speedup",
+        "gen board",
+        "all_moves",
+        "has_any",
+        "evaluate",
+        "game (us)"
     );
     for r in rows {
         println!(
-            "  {:<26} {:>5} {:>7.1} {:>11.0} {:>11.0} {:>11.0} {:>11.0} {:>11.0}",
+            "  {:<26} {:>5} {:>7.1} {:>11.0} {:>11.0} {:>7.1}x {:>11.0} {:>11.0} {:>11.0} {:>11.0} {:>11.0}",
             r.name,
             r.positions,
             r.avg_moves,
+            r.gen_naive_ns,
             r.gen_normal_ns,
+            r.speedup,
+            r.gen_board_ns,
             r.all_moves_ns,
             r.has_any_move_ns,
             r.evaluate_ns,

@@ -180,12 +180,7 @@ fn share(rec: &GameRecord, seat: usize) -> f64 {
     }
 }
 
-pub fn build(
-    args: &Args,
-    cfg: &GameConfig,
-    recs: &[GameRecord],
-    wall_seconds: f64,
-) -> Report {
+pub fn build(args: &Args, cfg: &GameConfig, recs: &[GameRecord], wall_seconds: f64) -> Report {
     let seats = cfg.seats as usize;
     let games = recs.len().max(1) as f64;
     let seat_games = games * seats as f64;
@@ -242,8 +237,8 @@ pub fn build(
     let first_margin: Vec<f64> = recs
         .iter()
         .map(|r| {
-            let others: f64 = r.scores[1..].iter().map(|&x| x as f64).sum::<f64>()
-                / (seats - 1) as f64;
+            let others: f64 =
+                r.scores[1..].iter().map(|&x| x as f64).sum::<f64>() / (seats - 1) as f64;
             r.scores[0] as f64 - others
         })
         .collect();
@@ -271,7 +266,11 @@ pub fn build(
     let (with_sl, without_sl) = split(&|r, s| r.seats[s].sparks + r.seats[s].leaps > 0);
     let dark_rounds: Vec<f64> = recs
         .iter()
-        .flat_map(|r| r.seats.iter().filter_map(|s| s.dark_round.map(|d| d as f64)))
+        .flat_map(|r| {
+            r.seats
+                .iter()
+                .filter_map(|s| s.dark_round.map(|d| d as f64))
+        })
         .collect();
     let mut movegen: Vec<f64> = recs
         .iter()
