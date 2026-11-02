@@ -80,12 +80,12 @@ pub struct Weights {
 impl Default for Weights {
     fn default() -> Self {
         Weights {
-            attach: 1.4,
-            attach_end: 0.5,
+            attach: 0.8,
+            attach_end: 0.4,
             reach: 0.28,
             reach_end: 0.08,
-            charge: 0.55,
-            charge_end: 0.55,
+            charge: 0.9,
+            charge_end: 1.0,
             rival_mean: 0.0,
             q_size: 1.6,
             q_block: 0.9,
@@ -94,7 +94,7 @@ impl Default for Weights {
             q_centre: 0.6,
             q_surge: 1.4,
             flare_width: 48,
-            flare_reply: 0,
+            flare_reply: 8,
             nova_root: 24,
             nova_c: 0.5,
             nova_pw: 1.5,
@@ -102,7 +102,7 @@ impl Default for Weights {
             nova_prior: 4.0,
             nova_local: 0.5,
             nova_width: 24,
-            shatter_margin: 1.0,
+            shatter_margin: 3.0,
             scan_charge: 4,
         }
     }
