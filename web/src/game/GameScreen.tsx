@@ -109,6 +109,41 @@ function describe(p: GameScreenProps, e: GameEvent): string | null {
   }
 }
 
+interface LogLine {
+  id: number;
+  text: string;
+  seat: number | null;
+  kind?: "round" | "quiet";
+}
+
+/** One line of the margin log for an event, or null to skip it. */
+export function logLine(p: GameScreenProps, e: GameEvent): { text: string; seat: number | null; kind?: "quiet" } | null {
+  const n = (s: number) => seatName(p, s);
+  switch (e.type) {
+    case "placed": {
+      if (e.hidden && e.cells.length === 0) return { text: `${n(e.seat)} moved somewhere in the fog`, seat: e.seat, kind: "quiet" };
+      const shard = e.spark ? "a spark" : `the ${p.kit.pieces[e.piece]?.name ?? "shard"}`;
+      return { text: `${n(e.seat)} ${e.leap ? "leapt in with" : "laid"} ${shard}`, seat: e.seat, kind: e.leap || e.spark ? undefined : "quiet" };
+    }
+    case "node":
+      return { text: `${n(e.seat)} grabbed a node`, seat: e.seat };
+    case "shattered":
+      return { text: `${n(e.seat)} shattered ${n(e.victim)}'s light`, seat: e.seat };
+    case "misfire":
+      return { text: `${n(e.seat)} misfired into the fog`, seat: e.seat };
+    case "scanned":
+      return { text: `${n(e.seat)} scanned the board`, seat: e.seat };
+    case "dark":
+      return { text: `${n(e.seat)} went dark`, seat: e.seat };
+    case "storm":
+      return { text: "the storm took the edge", seat: null };
+    case "gameOver":
+      return { text: e.winners.length > 1 ? "a tie. shared light" : `${n(e.winners[0]!)} wins`, seat: e.winners.length === 1 ? e.winners[0]! : null };
+    default:
+      return null;
+  }
+}
+
 interface Toast {
   id: number;
   text: string;
@@ -138,6 +173,9 @@ export function GameScreen(props: GameScreenProps) {
   const [resigning, setResigning] = useState(false);
   const prevView = useRef<View | null>(null);
   const toastId = useRef(0);
+  const [log, setLog] = useState<LogLine[]>([]);
+  const logId = useRef(0);
+  const logRef = useRef<HTMLOListElement>(null);
   const three = view.config.dims[2] > 1;
   const reduced = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -161,6 +199,16 @@ export function GameScreen(props: GameScreenProps) {
     if (props.notice) setError(props.notice.message);
   }, [props.notice]);
 
+  // A valid preview supersedes whatever went wrong a moment ago.
+  useEffect(() => {
+    if (ctl.pending) setError(null);
+  }, [ctl.pending]);
+
+  // Keep the newest line of the margin log in view.
+  useEffect(() => {
+    logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
+  }, [log.length]);
+
   useEffect(() => {
     if (!error) return;
     const t = setTimeout(() => setError(null), 2200);
@@ -173,6 +221,16 @@ export function GameScreen(props: GameScreenProps) {
     prevView.current = view;
     if (!prev || prev.ply === view.ply && prev.events === view.events) return;
     const w = view.config.dims[0];
+    // Undo or a rematch rewinds time; the old lines no longer happened.
+    if (view.ply < prev.ply) setLog([]);
+    // The move's events in order, then a divider if it closed the round.
+    const lines: LogLine[] = [];
+    for (const e of view.events) {
+      const l = logLine(props, e);
+      if (l) lines.push({ id: ++logId.current, ...l });
+    }
+    if (view.round !== prev.round && view.phase === "playing") lines.push({ id: ++logId.current, text: `round ${view.round}`, seat: null, kind: "round" });
+    if (lines.length) setLog((xs) => [...xs, ...lines].slice(-80));
     for (const e of view.events) {
       const text = describe(props, e);
       if (text) say(text, "seat" in e ? e.seat : null);
@@ -300,6 +358,19 @@ export function GameScreen(props: GameScreenProps) {
             </li>
           );
         })}
+      </ol>
+
+      <ol className="g-log" ref={logRef} aria-label="Match log" aria-live="off">
+        {log.length === 0 && <li className="g-log-empty">the margin. what happens goes here</li>}
+        {log.map((l) => (
+          <li
+            key={l.id}
+            className={l.kind ?? ""}
+            style={l.seat !== null ? ({ "--c": SEAT_COLORS[l.seat] } as React.CSSProperties) : undefined}
+          >
+            {l.text}
+          </li>
+        ))}
       </ol>
 
       <main
