@@ -9,8 +9,10 @@ test.describe("local game", () => {
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(String(e)));
       await page.setViewportSize({ width: w, height: h });
+      // This test drives the Paper board's SVG; the Night board has its own lab tests.
+      await page.addInitScript(() => localStorage.setItem("cubes:board:v1", "paper"));
       await page.goto("/game/local?preset=duel&seats=human,flare");
-      await expect(page.locator(".turn-note")).toBeVisible({ timeout: 60_000 });
+      await expect(page.locator(".g-turn-note")).toBeVisible({ timeout: 60_000 });
       await page.screenshot({ path: `test-results/game-start-${w}.png` });
       // Pick the biggest shard and use keyboard placement via the board.
       await page.keyboard.press("1");
@@ -30,8 +32,8 @@ test.describe("local game", () => {
       }
       expect(placed).toBe(true);
       // The bot answers and it's our move again.
-      await expect(page.locator(".seat.me .seat-score")).not.toHaveText("0");
-      await expect(page.locator(".turn-note")).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator(".g-seat.me .g-seat-score")).not.toHaveText("0");
+      await expect(page.locator(".g-turn-note")).toBeVisible({ timeout: 30_000 });
       await page.waitForTimeout(800);
       await page.screenshot({ path: `test-results/game-after-${w}.png` });
       expect(errors).toEqual([]);
