@@ -41,6 +41,8 @@ describe("margin log lines", () => {
     const p = props();
     expect(logLine(p, { type: "shattered", seat: 0, cell: 4, victim: 1 })?.text).toBe("Ana destroyed a Flare square");
     expect(logLine(p, { type: "dark", seat: 1 })?.text).toBe("Flare is out of moves");
+    const quit = { ...p, view: { seats: [{ resigned: false }, { resigned: true }] } } as unknown as GameScreenProps;
+    expect(logLine(quit, { type: "dark", seat: 1 })?.text).toBe("Flare resigned");
     expect(logLine(p, { type: "storm", level: 1, cells: [] })).toEqual({ text: "storm: outer ring destroyed", seat: null });
     expect(logLine(p, { type: "gameOver", scores: [40, 40], winners: [0, 1] })?.text).toBe("game over: a tie. everyone wins, technically");
   });
