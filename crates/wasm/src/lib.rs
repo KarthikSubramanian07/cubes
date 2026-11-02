@@ -97,6 +97,12 @@ impl Engine {
     }
 
     /// The action log as `{ seat, action }[]` JSON, for replays.
+    /// Every position from the start as JSON `View[]`, for replays.
+    pub fn frames(&self) -> Result<String, JsError> {
+        let frames = self.game.frames().map_err(js_err)?;
+        Ok(serde_json::to_string(&frames).expect("views serialize"))
+    }
+
     pub fn log(&self) -> String {
         serde_json::to_string(&self.game.data.log).expect("log serializes")
     }

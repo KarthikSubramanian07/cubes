@@ -227,12 +227,17 @@ test("tracks lobby, seat, host, view, clock and chat", () => {
   expect(client.state.chat).toEqual([{ name: "Ada", seat: 1, text: "hi", at: 3 }]);
   ws.push({ t: "view", view: { ply: 3 } as never });
   expect(client.state.view?.ply).toBe(3);
+  // The finished match arrives for the replay; a new game clears it.
+  ws.push({ t: "replay", game: '{"seed":18446744073709551608}' });
+  expect(client.state.replay).toBe('{"seed":18446744073709551608}');
+  ws.push({ t: "view", view: { ply: 0, phase: "playing" } as never });
+  expect(client.state.replay).toBeNull();
   ws.push({ t: "error", code: "stale", message: "out of date" });
   expect(client.state.error?.code).toBe("stale");
   // Garbage frames are ignored.
   ws.onmessage?.({ data: "{not json" });
   ws.onmessage?.({ data: 7 });
-  expect(seen).toEqual(["welcome", "lobby", "clock", "chat", "view", "error"]);
+  expect(seen).toEqual(["welcome", "lobby", "clock", "chat", "view", "replay", "view", "error"]);
   // A new welcome (reconnect) resets chat, since the server replays it.
   ws.push({ t: "welcome", pid: "pid-aaaaaaaa", token: "t", host: true });
   expect(client.state.chat).toEqual([]);

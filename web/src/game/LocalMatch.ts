@@ -237,8 +237,28 @@ export class LocalMatch {
     return new LocalMatch({ ...this.opts, seed: undefined });
   }
 
+  /** Was this match dealt from `seed`? (Rematches get a fresh one.) */
+  isSeed(seed: number): boolean {
+    return this.seed === seed;
+  }
+
   replayLog(): { seat: number; action: Action }[] {
     return this.game.log();
+  }
+
+  private framesCache: { ply: number; frames: View[] } | null = null;
+
+  /**
+   * Every position of the game so far, unfogged: the start, then one frame per
+   * logged action. Rebuilt from the seed and the log, so it costs nothing until
+   * someone asks for a replay, and it is cached until the game moves on.
+   */
+  frames(): View[] {
+    const log = this.game.log();
+    if (this.framesCache?.ply === log.length) return this.framesCache.frames;
+    const frames = this.game.frames();
+    this.framesCache = { ply: log.length, frames };
+    return frames;
   }
 
   /** Free the engine and stop the bots. Safe to call more than once. */

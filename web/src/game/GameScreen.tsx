@@ -10,6 +10,8 @@ import type { BoardSceneProps } from "@/render2d";
 import { useController } from "./useController";
 import { diffPlaced } from "./board";
 import { ShardIcon } from "./ui/ShardIcon";
+import { ReplayBar } from "./ui/ReplayBar";
+import { buzz } from "./haptics";
 import "./game.css";
 
 const PaperBoard = lazy(() => import("@/render2d").then((m) => ({ default: m.PaperBoard })));
@@ -51,6 +53,13 @@ export interface GameScreenProps {
   undoable?: boolean;
   onUndo?(): void;
   onRematch?(): void;
+  /** Every position of the finished game, for the replay. Local games only. */
+  frames?(): View[];
+  /** A line about your record against this bot, shown with the result. */
+  resultNote?: string | null;
+  /** Text to share after the game (the daily result). */
+  shareText?: string | null;
+  rematchLabel?: string;
   onResign?(): void;
   onLeave(): void;
   roomCode?: string;
@@ -186,6 +195,7 @@ export function GameScreen(props: GameScreenProps) {
       onError: (reason) => {
         setError(reason);
         props.sound?.invalid?.();
+        buzz("invalid");
       },
     },
   );
@@ -238,28 +248,68 @@ export function GameScreen(props: GameScreenProps) {
       if (e.type === "placed" && e.cells.length) {
         const x = (e.cells.reduce((a, c) => a + (c % w), 0) / e.cells.length / Math.max(1, w - 1)) * 2 - 1;
         props.sound?.place?.({ size: e.cells.length, seat: e.seat, pan: x });
+        if (e.seat === seat) buzz("place");
       }
-      if (e.type === "node") props.sound?.node?.();
-      if (e.type === "shattered") props.sound?.shatter?.();
+      if (e.type === "node") {
+        props.sound?.node?.();
+        if (e.seat === seat) buzz("node");
+      }
+      if (e.type === "shattered") {
+        props.sound?.shatter?.();
+        if (e.seat === seat || e.victim === seat) buzz("shatter");
+      }
       if (e.type === "misfire") props.sound?.misfire?.();
       if (e.type === "storm") props.sound?.storm?.();
       if (e.type === "dark") props.sound?.dark?.(e.seat);
       if (e.type === "scanned") props.sound?.scan?.();
       if (e.type === "gameOver") {
         const won = seat !== null && e.winners.includes(seat);
-        if (won) props.sound?.win?.();
+        if (won) {
+          props.sound?.win?.();
+          buzz("win");
+        }
         else props.sound?.lose?.();
       }
     }
     if (view.phase === "playing" && prev.turn !== view.turn) props.sound?.turnStart?.(view.turn === seat);
   }, [view]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // After the game, the board can be scrubbed back through every move.
+  const over0 = view.phase === "over";
+  const frames = useMemo(() => (over0 && peek && props.frames ? props.frames() : null), [over0, peek, view.ply]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [replayAt, setReplayAt] = useState<number | null>(null);
+  useEffect(() => setReplayAt(frames ? frames.length - 1 : null), [frames]);
+  const shown = frames && replayAt !== null ? frames[replayAt] ?? view : view;
+  const replayPrev = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = replayPrev.current;
+    replayPrev.current = replayAt;
+    if (prev === null || replayAt === null || replayAt !== prev + 1) return;
+    const w = shown.config.dims[0];
+    for (const e of shown.events) {
+      if (e.type === "placed" && e.cells.length) {
+        const x = (e.cells.reduce((a, c) => a + (c % w), 0) / e.cells.length / Math.max(1, w - 1)) * 2 - 1;
+        props.sound?.place?.({ size: e.cells.length, seat: e.seat, pan: x });
+      }
+      if (e.type === "shattered") props.sound?.shatter?.();
+    }
+  }, [replayAt]); // eslint-disable-line react-hooks/exhaustive-deps
+  const caption = useMemo(() => {
+    if (!frames || replayAt === null) return null;
+    for (const e of shown.events) {
+      const l = logLine(props, e);
+      if (l) return { text: l.text, color: l.seat !== null ? SEAT_COLORS[l.seat] : undefined };
+    }
+    return null;
+  }, [shown]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const lastPlaced = useMemo(() => {
-    const placed = view.events.find((e) => e.type === "placed");
+    const placed = shown.events.find((e) => e.type === "placed");
     if (placed && placed.type === "placed" && placed.cells.length) return placed.cells;
+    if (shown !== view) return frames && replayAt ? diffPlaced(frames[replayAt - 1] ?? null, shown) : [];
     return diffPlaced(prevView.current, view);
-  }, [view]);
-  const misfire = useMemo(() => view.events.flatMap((e) => (e.type === "misfire" ? e.cells : [])), [view]);
+  }, [shown]); // eslint-disable-line react-hooks/exhaustive-deps
+  const misfire = useMemo(() => shown.events.flatMap((e) => (e.type === "misfire" ? e.cells : [])), [shown]);
 
   // 3D boards only exist in the Night renderer.
   const effectiveRenderer = three ? "night" : renderer;
@@ -299,7 +349,7 @@ export function GameScreen(props: GameScreenProps) {
         <div className="g-game-title">
           <span className="g-eyebrow">{props.title}</span>
           {props.roomCode && <span className="g-room-code">room {props.roomCode}</span>}
-          <span className="g-round">round {view.round}</span>
+          <span className="g-round">round {shown.round}</span>
           {view.nextStorm !== null && view.config.storm && (
             <span className="g-storm-chip" title="The outer ring of the board will be destroyed">
               storm in {Math.max(0, view.nextStorm - view.round)} {view.nextStorm - view.round === 1 ? "round" : "rounds"}
@@ -324,9 +374,10 @@ export function GameScreen(props: GameScreenProps) {
       </header>
 
       <ol className="g-seats" aria-label="Players">
-        {view.seats.map((s) => {
+        {shown.seats.map((s) => {
           const info = props.seats[s.seat];
-          const active = view.turn === s.seat && !over;
+          // In the replay, light up whoever was about to move in that frame.
+          const active = shown.turn === s.seat && (!over || (shown !== view && shown.phase === "playing"));
           return (
             <li
               key={s.seat}
@@ -375,7 +426,7 @@ export function GameScreen(props: GameScreenProps) {
       </ol>
 
       <main
-        className="g-board-wrap"
+        className={`g-board-wrap ${frames && over && peek ? "replaying" : ""}`}
         data-ghost-state={ctl.ghost ? (ctl.ghost.valid ? "valid" : "invalid") : "none"}
         onContextMenu={(e) => e.preventDefault()} onWheel={(e) => {
         // In 3D the wheel zooms the camera; on paper it turns the shard.
@@ -383,7 +434,7 @@ export function GameScreen(props: GameScreenProps) {
       }}>
         <Suspense fallback={<div className="g-board-loading">setting out the pieces…</div>}>
           <Board
-            view={view}
+            view={shown}
             ghost={ctl.ghost ? { cells: ctl.ghost.cells, seat: ctl.ghost.seat, valid: ctl.ghost.valid } : null}
             marks={{ attach: ctl.marks.attach, targets: ctl.marks.targets, lastPlaced, misfire }}
             selectedSeat={seat}
@@ -413,10 +464,23 @@ export function GameScreen(props: GameScreenProps) {
             {error}
           </div>
         )}
-        {over && peek && (
-          <button className="g-peek-back g-btn-primary" autoFocus onClick={() => setPeek(false)}>
-            Show the result
-          </button>
+        {over && peek && frames && replayAt !== null && frames.length > 1 ? (
+          <ReplayBar
+            count={frames.length}
+            at={replayAt}
+            onSeek={setReplayAt}
+            caption={caption}
+            round={shown.round}
+            onClose={() => setPeek(false)}
+            reducedMotion={reduced}
+          />
+        ) : (
+          over &&
+          peek && (
+            <button className="g-peek-back g-btn-primary" autoFocus onClick={() => setPeek(false)}>
+              Show the result
+            </button>
+          )
         )}
         <div className="g-toasts" aria-live="polite">
           {toasts.map((t) => (
@@ -662,14 +726,16 @@ function GameOver(props: GameScreenProps & { onPeek(): void }) {
         <p className="g-muted">
           {lit} squares covered in {view.round} rounds.
         </p>
+        {props.resultNote && <p className="g-hand g-result-note">{props.resultNote}</p>}
         <div className="g-row">
+          {props.shareText && <ShareButton text={props.shareText} />}
           {props.onRematch && (
-            <button className="g-btn-primary" onClick={props.onRematch}>
-              Rematch
+            <button className={props.shareText ? "g-btn-ghost" : "g-btn-primary"} onClick={props.onRematch}>
+              {props.rematchLabel ?? "Rematch"}
             </button>
           )}
           <button className="g-btn-ghost" onClick={props.onPeek}>
-            See the board
+            {props.frames ? "Watch the replay" : "See the board"}
           </button>
           <button className="g-btn-ghost" onClick={props.onLeave}>
             Back to the lobby
@@ -677,6 +743,34 @@ function GameOver(props: GameScreenProps & { onPeek(): void }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function ShareButton({ text }: { text: string }) {
+  const [done, setDone] = useState<string | null>(null);
+  const go = async () => {
+    try {
+      if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+        await navigator.share({ text });
+        return;
+      }
+      await navigator.clipboard.writeText(text);
+      setDone("copied. paste it somewhere smug");
+    } catch (e) {
+      if ((e as Error)?.name !== "AbortError") setDone("couldn't copy. your browser said no");
+    }
+  };
+  return (
+    <>
+      <button className="g-btn-primary" onClick={() => void go()} autoFocus>
+        Share result
+      </button>
+      {done && (
+        <span className="g-hand g-share-done" role="status">
+          {done}
+        </span>
+      )}
+    </>
   );
 }
 

@@ -67,7 +67,7 @@ export const ROOM_SLUG = "room";
 export const NOT_FOUND_SLUG = "not-found";
 
 const ROOM = /^\/r\/[A-HJ-NP-Z2-9]{5}$/;
-const APP_ROUTES: readonly RegExp[] = [ROOM, /^\/game\/local$/, /^\/lab$/];
+const APP_ROUTES: readonly RegExp[] = [ROOM, /^\/game\/local$/, /^\/daily$/, /^\/lab$/];
 
 /** Standalone static pages from the build (developer labs), served as they are. */
 const STATIC_PAGES: readonly RegExp[] = [/^\/(sound-lab|paper-lab)$/];

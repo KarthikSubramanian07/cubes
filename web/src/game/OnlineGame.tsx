@@ -49,6 +49,24 @@ function Online({ room, code, onLeave }: Props) {
 
   const kit: Kit | null = useMemo(() => (ready ? getKit(view.config.kit) : null), [ready, view.config.kit]);
 
+  // After the game the server sends the whole match; every position is rebuilt from it.
+  const replay = room.replay;
+  const frames = useMemo(() => {
+    if (!ready || !replay) return undefined;
+    let cache: View[] | null = null;
+    return () => {
+      if (!cache) {
+        const g = LocalGame.fromJSON(replay);
+        try {
+          cache = g.frames();
+        } finally {
+          g.free();
+        }
+      }
+      return cache;
+    };
+  }, [ready, replay]);
+
   // Filled lobby seats, in order, are the game's seats.
   const seats: SeatInfo[] = useMemo(
     () =>
@@ -109,6 +127,7 @@ function Online({ room, code, onLeave }: Props) {
       onRematch={room.me?.host ? () => room.send({ t: "rematch" }) : undefined}
       onResign={mySeat !== null ? () => room.send({ t: "action", action: { type: "resign" }, ply: view.ply }) : undefined}
       onLeave={onLeave}
+      frames={frames}
       sound={sound}
       aside={<Chatter room={room} />}
     />

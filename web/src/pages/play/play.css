@@ -511,3 +511,124 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* daily board ------------------------------------------------------------- */
+.daily {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(20px, 4vw, 48px);
+  margin-bottom: clamp(32px, 5vw, 56px);
+  --card-pad: clamp(20px, 3vw, 30px);
+  background:
+    radial-gradient(120% 140% at 100% 0%, var(--accent-wash), transparent 60%),
+    var(--panel);
+}
+.daily__title {
+  margin: 6px 0 8px;
+  font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.5rem);
+  line-height: 1.05;
+}
+.daily__title em {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.daily .muted {
+  max-width: 54ch;
+  margin: 0;
+}
+.daily__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.daily__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  gap: 4px;
+  width: clamp(120px, 16vw, 168px);
+  transform: rotate(2deg);
+}
+.daily__sq {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--line);
+}
+.daily__sq--you {
+  background: var(--seat-0);
+}
+.daily__sq--them {
+  background: var(--seat-1);
+}
+.daily__sq--dead {
+  background: var(--ink-2);
+  opacity: 0.5;
+}
+.daily__streak {
+  position: absolute;
+  right: clamp(16px, 4vw, 40px);
+  top: -14px;
+}
+@media (max-width: 640px) {
+  .daily {
+    grid-template-columns: 1fr;
+  }
+  .daily__grid {
+    justify-self: start;
+    width: 132px;
+  }
+}
+
+/* your record ------------------------------------------------------------- */
+.record {
+  margin-top: 64px;
+  display: grid;
+  gap: 10px;
+  --card-pad: 22px;
+}
+.record__big {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font: 400 2.6rem/1 var(--serif);
+  font-variant-numeric: tabular-nums;
+}
+.record__big span {
+  color: var(--faint);
+}
+.record__big small {
+  margin-left: 8px;
+  font: 500 var(--fs-xs) / 1 var(--mono);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.record__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+.record__table th,
+.record__table td {
+  padding: 7px 0;
+  border-top: 1px dashed var(--line);
+  text-align: left;
+  font-weight: 500;
+}
+.record__table td {
+  text-align: right;
+  font: 500 var(--fs-sm) / 1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.record__table .muted {
+  font-family: var(--hand);
+  font-size: 1.15rem;
+  margin-left: 4px;
+}
+.record__foot {
+  margin: 0;
+  font-size: var(--fs-xs);
+}

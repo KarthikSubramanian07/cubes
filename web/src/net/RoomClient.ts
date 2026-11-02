@@ -58,6 +58,8 @@ export interface RoomState {
   error: RoomError | null;
   /** Round-trip time of the last heartbeat, in ms. */
   latency: number | null;
+  /** The finished match as engine JSON, once the game is over. */
+  replay: string | null;
 }
 
 export interface RoomEvents {
@@ -171,6 +173,7 @@ export class RoomClient {
     chat: [],
     error: null,
     latency: null,
+    replay: null,
   };
 
   constructor(opts: RoomClientOptions) {
@@ -416,8 +419,12 @@ export class RoomClient {
         break;
       }
       case "view":
-        this.patch({ view: msg.view });
+        // A fresh game (rematch) makes the old replay stale.
+        this.patch(msg.view.phase === "playing" ? { view: msg.view, replay: null } : { view: msg.view });
         this.emit("view", msg.view);
+        break;
+      case "replay":
+        this.patch({ replay: msg.game });
         break;
       case "clock": {
         const clock = { seat: msg.seat, endsAt: msg.endsAt };

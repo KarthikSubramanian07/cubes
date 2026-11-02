@@ -37,6 +37,12 @@ export const routes = [
     HydrateFallback: () => null,
     ErrorBoundary: RouteError,
   },
+  {
+    path: "daily",
+    lazy: () => import("@/game/LocalGamePage").then((m) => ({ Component: m.default })),
+    HydrateFallback: () => null,
+    ErrorBoundary: RouteError,
+  },
   { ...labRoute, HydrateFallback: () => null, ErrorBoundary: RouteError },
   { path: "game/:id", lazy: () => import("@/pages/Game"), HydrateFallback: () => null, ErrorBoundary: RouteError },
 ];

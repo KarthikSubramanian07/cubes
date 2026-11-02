@@ -7,6 +7,7 @@ import "./nav.css";
 
 const LINKS = [
   { to: "/play", label: "Play" },
+  { to: "/daily", label: "Daily" },
   { to: "/rules", label: "Rules" },
   { to: "/#modes", label: "Modes" },
   { to: "/#faq", label: "FAQ" },

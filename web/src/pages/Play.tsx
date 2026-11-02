@@ -3,6 +3,7 @@ import { useDocumentMeta } from "@/app/meta";
 import { makeRoomCode } from "@/app/roomCode";
 import { setupPath, type GameSetup, type SetupKind } from "@/app/setup";
 import { PlayHub } from "./play/PlayHub";
+import { DailyCard } from "./play/DailyCard";
 
 const NAME_KEY = "cubes:name";
 
@@ -60,6 +61,7 @@ export function Component() {
           New here? <Link to="/learn">Learn in three minutes</Link> first.
         </p>
       </header>
+      <DailyCard />
       <PlayHub onStart={onStart} onJoin={onJoin} initialKind={initialKind} initialName={storedName()} />
     </div>
   );

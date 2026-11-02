@@ -121,4 +121,25 @@ describe("LocalMatch", () => {
     expect(m.getSnapshot().view.winners!.length).toBeGreaterThan(0);
     m.dispose();
   }, 70000);
+
+  it("rebuilds every position of a finished game for the replay", async () => {
+    const m = new LocalMatch({
+      config: getPreset("duel", 2),
+      seats: [{ kind: "bot", name: "A", level: "ember" }, { kind: "bot", name: "B", level: "ember" }],
+      seed: 12,
+      botDelayMs: 0,
+      bots: syncBots,
+    });
+    await until(m, (s) => s.view.phase === "over", 60000);
+    const frames = m.frames();
+    const final = m.getSnapshot().view;
+    expect(frames.length).toBe(m.replayLog().length + 1);
+    expect(frames[0]!.ply).toBe(0);
+    expect(frames[0]!.cells.filter((c) => c >= 1 && c <= 4).length).toBe(2); // just the two Cores
+    expect(frames.at(-1)!.cells).toEqual(final.cells);
+    expect(frames.at(-1)!.phase).toBe("over");
+    // Cached until the game moves on.
+    expect(m.frames()).toBe(frames);
+    m.dispose();
+  }, 70000);
 });

@@ -165,6 +165,12 @@ pub enum ServerMsg {
     Pong {
         ts: f64,
     },
+    /// After the game: the whole match as engine JSON (seed and log), sent
+    /// as a string so the 64-bit seed survives JavaScript. Clients rebuild
+    /// every position from it for the replay.
+    Replay {
+        game: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

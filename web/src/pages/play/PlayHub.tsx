@@ -5,6 +5,7 @@ import { normalizeRoomCode } from "@/app/roomCode";
 import { AI_LABELS, AI_LEVELS, MAX_NAME, buildSetup, describeConfig, type GameSetup, type SetupKind } from "@/app/setup";
 import { ArrowRight, Button } from "@/ui/Button";
 import { HandNote } from "@/ui/HandNote";
+import { RecordCard } from "./RecordCard";
 import { ModeArt } from "@/ui/ModeArt";
 import { Pill } from "@/ui/Pill";
 import { SeatChip } from "@/ui/SeatChip";
@@ -436,6 +437,7 @@ export function PlayHub({ onStart, onJoin, initialKind = "online", initialName =
             ready? start here
           </HandNote>
         </div>
+        <RecordCard />
       </aside>
     </div>
   );
