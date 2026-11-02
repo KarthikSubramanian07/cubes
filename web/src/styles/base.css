@@ -6,6 +6,7 @@
 }
 
 html {
+  overflow-x: clip;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-padding-top: calc(var(--nav-h) + 24px);
@@ -145,4 +146,11 @@ code {
 
 table {
   border-collapse: collapse;
+}
+
+/* Installed to the home screen: the status bar is translucent, so leave room. */
+@media (display-mode: standalone) {
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
 }

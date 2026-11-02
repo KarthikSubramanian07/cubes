@@ -718,3 +718,11 @@
     margin-right: 0;
   }
 }
+
+/* Tablets: the margin is narrow, so keep the notes inside the content edge. */
+@media (max-width: 1100px) {
+  .how__margin,
+  .modes__margin {
+    right: 0;
+  }
+}
