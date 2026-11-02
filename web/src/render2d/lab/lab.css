@@ -1,0 +1,289 @@
+:root {
+  --paper: #f2eee5;
+  --paper-2: #ebe5d8;
+  --ink: #28221e;
+  --graphite: #5f594f;
+  --rule: rgba(40, 34, 30, 0.16);
+  --clay: #e2683c;
+  --serif: "Newsreader Variable", "Iowan Old Style", Georgia, serif;
+  --mono: "JetBrains Mono Variable", ui-monospace, Menlo, monospace;
+  --hand: "Caveat", "Bradley Hand", cursive;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+.lab {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: clamp(16px, 3vw, 36px) clamp(14px, 3vw, 40px) 40px;
+}
+
+.lab-head {
+  position: relative;
+  border-bottom: 1px dashed var(--rule);
+  padding-bottom: 10px;
+  margin-bottom: 18px;
+}
+
+.lab-eyebrow,
+.lab-label,
+.lab-mono {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--graphite);
+}
+
+.lab-eyebrow {
+  margin: 0 0 6px;
+}
+
+.lab-title {
+  font-weight: 300;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.lab-title em {
+  font-style: italic;
+  color: var(--clay);
+}
+
+.lab-sub {
+  max-width: 54ch;
+  margin: 10px 0 14px;
+  font-size: 16px;
+  line-height: 1.45;
+  color: #3c3530;
+}
+
+.lab-note {
+  display: inline-block;
+  margin-left: 10px;
+  font-family: var(--hand);
+  font-size: 22px;
+  color: var(--clay);
+  transform: rotate(-3deg) translateY(2px);
+}
+
+.lab-tabs {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.lab-tab {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 17px;
+  color: var(--graphite);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.lab-tab:hover {
+  color: var(--ink);
+}
+
+.lab-tab.is-on {
+  color: var(--ink);
+  font-style: italic;
+  border-bottom-color: var(--clay);
+}
+
+.lab-tab:focus-visible,
+.lab-btn:focus-visible,
+.lab-chip:focus-visible,
+.lab-select:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.lab-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: clamp(16px, 3vw, 40px);
+  align-items: start;
+}
+
+.lab-board {
+  height: min(calc(100vh - 210px), 900px);
+  min-height: 360px;
+}
+
+.lab-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+}
+
+.lab-scene-note {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--graphite);
+}
+
+.lab-turn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  padding: 10px 0;
+  border-top: 1px dashed var(--rule);
+  border-bottom: 1px dashed var(--rule);
+}
+
+.lab-turn .lab-mono {
+  margin-left: auto;
+}
+
+.lab-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px 6px 5px 3px;
+  border: 1.5px solid;
+  transform: rotate(-4deg);
+}
+
+.lab-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lab-label {
+  margin: 0;
+}
+
+.lab-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lab-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.lab-btn,
+.lab-chip,
+.lab-select {
+  appearance: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: #f8f5ee;
+  border: 1.5px solid var(--ink);
+  border-radius: 9px 7px 10px 6px / 6px 10px 7px 9px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
+}
+
+.lab-btn:hover,
+.lab-chip:hover {
+  background: #fffdf8;
+  transform: translateY(-1px) rotate(-0.4deg);
+}
+
+.lab-btn:active {
+  transform: translateY(1px);
+}
+
+.lab-btn.ghost {
+  border-style: dashed;
+  background: transparent;
+}
+
+.lab-chip {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-width: 1px;
+}
+
+.lab-chip.is-on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.lab-select {
+  padding-right: 12px;
+}
+
+.lab-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.lab-check input {
+  accent-color: var(--ink);
+  width: 16px;
+  height: 16px;
+}
+
+.lab-log {
+  margin: 0;
+  font-family: var(--hand);
+  font-size: 22px;
+  color: var(--ink);
+  min-height: 1.2em;
+}
+
+.lab-help {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--graphite);
+}
+
+@media (max-width: 900px) {
+  .lab-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lab-board {
+    height: auto;
+    aspect-ratio: 1 / 1;
+    min-height: 0;
+    margin: 0 -8px;
+  }
+
+  .lab-note {
+    display: block;
+    margin: 4px 0 0;
+  }
+}

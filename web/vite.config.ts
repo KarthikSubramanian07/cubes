@@ -13,6 +13,7 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL("./index.html", import.meta.url)),
         "sound-lab": fileURLToPath(new URL("./sound-lab.html", import.meta.url)),
+        paperLab: fileURLToPath(new URL("./paper-lab.html", import.meta.url)),
       },
       output: {
         manualChunks(id) {
