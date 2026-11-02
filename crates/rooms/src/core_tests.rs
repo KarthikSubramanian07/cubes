@@ -349,20 +349,54 @@ fn fixed_size_presets_need_the_right_seat_count() {
         a,
         json!({"t":"configure","preset":"duel","config":GameConfig::preset("duel",2).unwrap()}),
     );
-    plane_with_bots(&mut r, a, &[(0, "ember"), (1, "ember"), (2, "ember")]);
+    plane_with_bots(&mut r, a, &[(0, "ember"), (1, "ember")]);
     r.take(a);
-    r.send(a, json!({"t":"start"}));
-    assert_eq!(r.errors(a), vec![ErrorCode::BadConfig]);
+    // Duel has two seats; a third can't be filled.
+    r.send(a, json!({"t":"setBot","seat":2,"level":"ember"}));
+    assert_eq!(r.errors(a), vec![ErrorCode::BadSeat]);
     r.send(
         a,
         json!({"t":"configure","preset":"teams","config":GameConfig::preset("teams",4).unwrap()}),
     );
     r.send(a, json!({"t":"start"}));
     assert_eq!(r.errors(a), vec![ErrorCode::BadConfig]);
+    // Teams needs all four seats.
+    r.send(a, json!({"t":"setBot","seat":2,"level":"ember"}));
     r.send(a, json!({"t":"setBot","seat":3,"level":"ember"}));
     r.send(a, json!({"t":"start"}));
     assert!(r.errors(a).is_empty());
     assert!(r.core.game().unwrap().data.config.teams);
+}
+
+#[test]
+fn a_two_seat_mode_only_offers_two_seats() {
+    let mut r = Room::new();
+    let (a, _) = r.join("alice-0001", "Alice");
+    let (b, _) = r.join("bob-00000002", "Bob");
+    r.send(a, json!({"t":"sit","seat":0}));
+    r.send(b, json!({"t":"sit","seat":3}));
+    r.send(a, json!({"t":"setBot","seat":2,"level":"ember"}));
+    assert_eq!(r.core.seat_limit(), 4);
+    // Switching to Duel pulls Bob into a seat that counts and sends the bot home.
+    r.send(
+        a,
+        json!({"t":"configure","preset":"duel","config":GameConfig::preset("duel",2).unwrap()}),
+    );
+    assert_eq!(r.core.seat_limit(), 2);
+    let l = r.lobby();
+    assert_eq!(l.seats[0].name, "Alice");
+    assert_eq!(l.seats[1].name, "Bob");
+    assert_eq!(l.seats[2].kind, SeatKind::Empty);
+    assert_eq!(l.seats[3].kind, SeatKind::Empty);
+    // A third person can't sit past the limit, and the game starts.
+    let (c, _) = r.join("cara-0000003", "Cara");
+    r.take(c);
+    r.send(c, json!({"t":"sit","seat":2}));
+    assert_eq!(r.errors(c), vec![ErrorCode::BadSeat]);
+    r.take(a);
+    r.send(a, json!({"t":"start"}));
+    assert!(r.errors(a).is_empty());
+    assert_eq!(r.core.phase(), RoomPhase::Playing);
 }
 
 #[test]
