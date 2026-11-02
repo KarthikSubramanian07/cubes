@@ -132,6 +132,10 @@ export function GameScreen(props: GameScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [help, setHelp] = useState(false);
   const [layerCut, setLayerCut] = useState<number | null>(null);
+  // The result sheet can be tucked away to look at the final board.
+  const [peek, setPeek] = useState(false);
+  // Resigning asks first, inline; the browser's confirm() box looked like an error.
+  const [resigning, setResigning] = useState(false);
   const prevView = useRef<View | null>(null);
   const toastId = useRef(0);
   const three = view.config.dims[2] > 1;
@@ -206,6 +210,9 @@ export function GameScreen(props: GameScreenProps) {
   const charge = myView?.charge ?? 0;
   const color = (s: number) => SEAT_COLORS[s] ?? "#999";
   const over = view.phase === "over";
+  useEffect(() => {
+    if (!over) setPeek(false);
+  }, [over]);
   const myTurn = canAct;
   const turnName = seatName(props, view.turn);
 
@@ -295,7 +302,10 @@ export function GameScreen(props: GameScreenProps) {
         })}
       </ol>
 
-      <main className="g-board-wrap" onContextMenu={(e) => e.preventDefault()} onWheel={(e) => {
+      <main
+        className="g-board-wrap"
+        data-ghost-state={ctl.ghost ? (ctl.ghost.valid ? "valid" : "invalid") : "none"}
+        onContextMenu={(e) => e.preventDefault()} onWheel={(e) => {
         // In 3D the wheel zooms the camera; on paper it turns the shard.
         if (effectiveRenderer === "paper" && ctl.piece !== null) ctl.transform(e.deltaY > 0 ? "rotate" : "rotateBack");
       }}>
@@ -314,7 +324,7 @@ export function GameScreen(props: GameScreenProps) {
 
         {myTurn && !over && (
           <div className="g-turn-note g-hand" aria-live="polite">
-            <span>{ctl.hint ?? (ctl.pending ? "tap again to place" : "your move")}</span>
+            <span>{ctl.hint ?? (ctl.pendingVia === "key" ? "enter places it · n for the next spot" : ctl.pending ? "tap again to place" : "your move")}</span>
             <svg viewBox="0 0 80 60" fill="none" aria-hidden className="g-hand-arrow">
               <path d="M8 6 C 30 4, 56 16, 64 44" />
               <path d="M54 38 L 65 47 L 70 33" />
@@ -331,6 +341,11 @@ export function GameScreen(props: GameScreenProps) {
             {error}
           </div>
         )}
+        {over && peek && (
+          <button className="g-peek-back g-btn-primary" autoFocus onClick={() => setPeek(false)}>
+            Show the result
+          </button>
+        )}
         <div className="g-toasts" aria-live="polite">
           {toasts.map((t) => (
             <div key={t.id} className="g-toast g-hand" style={{ "--c": t.seat !== null ? color(t.seat) : "var(--ink)" } as React.CSSProperties}>
@@ -341,10 +356,12 @@ export function GameScreen(props: GameScreenProps) {
 
         {three && (
           <div className="g-layer-cut">
-            <label>
+            <label title="Hide the layers above this one">
               <span className="g-eyebrow">slice</span>
               <input
                 type="range"
+                aria-label="Show layers up to"
+                aria-valuetext={layerCut === null ? "all layers" : `layers 1 to ${layerCut + 1}`}
                 min={0}
                 max={view.config.dims[2] - 1}
                 value={layerCut ?? view.config.dims[2] - 1}
@@ -353,6 +370,9 @@ export function GameScreen(props: GameScreenProps) {
                   setLayerCut(v >= view.config.dims[2] - 1 ? null : v);
                 }}
               />
+              <span className="g-layer-val" aria-hidden>
+                {layerCut === null ? "all" : `≤${layerCut + 1}`}
+              </span>
             </label>
           </div>
         )}
@@ -407,6 +427,11 @@ export function GameScreen(props: GameScreenProps) {
               ) : (
                 <button className="g-ctl" disabled={ctl.piece === null} onClick={() => { ctl.transform("flip"); props.sound?.rotate?.(); }} title="Flip (F)">
                   ⇋ <span>flip</span>
+                </button>
+              )}
+              {three && (
+                <button className="g-ctl" disabled={!myTurn || ctl.mode !== "place"} onClick={() => ctl.cycleFit(1)} title="Show the next spot this shard fits (N)">
+                  ⌖ <span>next fit</span>
                 </button>
               )}
               {ctl.pending && (
@@ -464,15 +489,28 @@ export function GameScreen(props: GameScreenProps) {
                   undo
                 </button>
               )}
-              {!over && props.onResign && (
-                <button
-                  className="g-quiet"
-                  onClick={() => {
-                    if (confirm("Go dark for the rest of this game?")) props.onResign?.();
-                  }}
-                >
+              {!over && props.onResign && !resigning && (
+                <button className="g-quiet" onClick={() => setResigning(true)}>
                   resign
                 </button>
+              )}
+              {!over && props.onResign && resigning && (
+                <span className="g-resign-ask" role="group" aria-label="Confirm resign">
+                  <span className="g-hand">go dark for good?</span>
+                  <button
+                    className="g-quiet danger"
+                    autoFocus
+                    onClick={() => {
+                      setResigning(false);
+                      props.onResign?.();
+                    }}
+                  >
+                    yes, resign
+                  </button>
+                  <button className="g-quiet" onClick={() => setResigning(false)}>
+                    keep playing
+                  </button>
+                </span>
               )}
             </div>
           </>
@@ -498,7 +536,7 @@ export function GameScreen(props: GameScreenProps) {
         </div>
       )}
 
-      {over && <GameOver {...props} />}
+      {over && !peek && <GameOver {...props} onPeek={() => setPeek(true)} />}
 
       {help && <Help three={three} arena={arena} fog={fog} onClose={() => setHelp(false)} />}
     </div>
@@ -516,7 +554,7 @@ function useClock(clock: { seat: number; endsAt: number } | null): number | null
   return Math.max(0, Math.ceil((clock.endsAt - now) / 1000));
 }
 
-function GameOver(props: GameScreenProps) {
+function GameOver(props: GameScreenProps & { onPeek(): void }) {
   const { view } = props;
   const seat = props.seat !== null && props.seats[props.seat]?.kind === "human" ? props.seat : null;
   const scores = view.scores ?? view.seats.map((s) => s.score ?? 0);
@@ -558,6 +596,9 @@ function GameOver(props: GameScreenProps) {
               Rematch
             </button>
           )}
+          <button className="g-btn-ghost" onClick={props.onPeek}>
+            See the board
+          </button>
           <button className="g-btn-ghost" onClick={props.onLeave}>
             Back to the lobby
           </button>
@@ -598,6 +639,10 @@ function Help({ three, arena, fog, onClose }: { three: boolean; arena: boolean; 
               <dd>flip</dd>
             </>
           )}
+          <dt>Arrows{three ? " · PgUp/PgDn" : ""}</dt>
+          <dd>move the cursor{three ? " · up and down a layer" : ""}</dd>
+          <dt>N</dt>
+          <dd>show the next spot the shard fits (Shift+N goes back)</dd>
           <dt>Enter</dt>
           <dd>place the ghost</dd>
           <dt>Esc</dt>

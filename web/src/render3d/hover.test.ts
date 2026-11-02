@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cellIndex, OWNER, type Vec3 } from "@/engine/types";
 import { cellToWorld, layoutOf } from "./coords";
-import { resolveHover, sameTarget } from "./hover";
+import { columnTop, nudge, resolveHover, sameTarget } from "./hover";
 
 const D2: Vec3 = [5, 5, 1];
 const D3: Vec3 = [4, 4, 4];
@@ -81,5 +81,38 @@ describe("sameTarget", () => {
     expect(sameTarget({ cell: 1, normal: [0, 1, 0] }, { cell: 1, normal: [0, 1, 0] })).toBe(true);
     expect(sameTarget({ cell: 1, normal: [0, 1, 0] }, { cell: 1, normal: [1, 0, 0] })).toBe(false);
     expect(sameTarget({ cell: 1 }, { cell: 2 })).toBe(false);
+  });
+});
+
+describe("keyboard nudge", () => {
+  // Default camera: looking from +Z (board y large) towards -Z.
+  const cam = { forward: [0, -1] as [number, number], right: [1, 0] as [number, number] };
+
+  it("moves relative to the camera on a 2D board", () => {
+    const L = layoutOf(D2);
+    const from = cellIndex(D2, 2, 2, 0);
+    expect(nudge(L, board(D2), from, "ArrowRight", { ...cam, gravity: false })).toEqual({ cell: cellIndex(D2, 3, 2, 0) });
+    expect(nudge(L, board(D2), from, "ArrowUp", { ...cam, gravity: false })).toEqual({ cell: cellIndex(D2, 2, 1, 0) });
+    // Camera swung round to look along +X: "up" now walks +x.
+    expect(nudge(L, board(D2), from, "ArrowUp", { forward: [1, 0], right: [0, 1], gravity: false })).toEqual({ cell: cellIndex(D2, 3, 2, 0) });
+    expect(nudge(L, board(D2), from, "PageUp", { ...cam, gravity: false })).toBeNull();
+    expect(nudge(L, board(D2), cellIndex(D2, 4, 2, 0), "ArrowRight", { ...cam, gravity: false })).toBeNull();
+  });
+
+  it("lands on top of the next column under gravity", () => {
+    const L = layoutOf(D3);
+    const cells = board(D3, { [cellIndex(D3, 2, 1, 0)]: 2, [cellIndex(D3, 2, 1, 1)]: 1 });
+    expect(columnTop(L, cells, 2, 1, null)).toBe(2);
+    expect(columnTop(L, cells, 2, 1, 1)).toBeNull();
+    expect(nudge(L, cells, cellIndex(D3, 1, 1, 0), "ArrowRight", { ...cam, gravity: true })).toEqual({ cell: cellIndex(D3, 2, 1, 2), normal: [0, 0, 1] });
+    expect(nudge(L, cells, cellIndex(D3, 1, 1, 0), "PageUp", { ...cam, gravity: true })).toEqual({ cell: cellIndex(D3, 1, 1, 1), normal: [0, 0, 1] });
+  });
+
+  it("keeps the layer in free-floating boards and respects the slice", () => {
+    const L = layoutOf(D3);
+    const from = cellIndex(D3, 1, 1, 2);
+    expect(nudge(L, board(D3), from, "ArrowLeft", { ...cam, gravity: false })).toEqual({ cell: cellIndex(D3, 0, 1, 2), normal: [0, 0, 1] });
+    expect(nudge(L, board(D3), from, "PageUp", { ...cam, gravity: false, layerCut: 2 })).toBeNull();
+    expect(nudge(L, board(D3), cellIndex(D3, 1, 1, 0), "PageDown", { ...cam, gravity: false })).toBeNull();
   });
 });

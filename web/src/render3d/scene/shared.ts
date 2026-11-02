@@ -1,4 +1,5 @@
 import type { FxEngine } from "../fxEngine";
+import type { HoverTarget } from "../hover";
 
 /** Mutable per-scene state shared between components without re-rendering. */
 export interface SceneShared {
@@ -6,8 +7,10 @@ export interface SceneShared {
   fx: FxEngine | null;
   /** Live pointer count on the canvas; a gesture that ever had two fingers never selects. */
   gesture: { pointers: Set<number>; multi: boolean };
+  /** The last target reported through onHover, by the pointer or the arrow keys. */
+  hover: HoverTarget | null;
 }
 
 export function createShared(): SceneShared {
-  return { pointer: { x: 0, y: 0, z: 0, active: false }, fx: null, gesture: { pointers: new Set(), multi: false } };
+  return { pointer: { x: 0, y: 0, z: 0, active: false }, fx: null, gesture: { pointers: new Set(), multi: false }, hover: null };
 }

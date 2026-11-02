@@ -526,7 +526,10 @@ impl RoomCore {
                     return err(ErrorCode::WrongPhase, "seats are locked during a game");
                 }
                 let s = seat as usize;
-                if s >= MAX_SEATS || self.seats[s] != Slot::Empty {
+                if s >= self.seat_limit() {
+                    return err(ErrorCode::BadSeat, "this mode has fewer seats than that");
+                }
+                if self.seats[s] != Slot::Empty {
                     return err(ErrorCode::BadSeat, "that seat isn't free");
                 }
                 if let Some(old) = self.seat_of(&pid) {
@@ -563,6 +566,7 @@ impl RoomCore {
                 }
                 self.preset = preset;
                 self.config = config;
+                self.fit_seats();
                 if self.phase == RoomPhase::Over {
                     self.phase = RoomPhase::Lobby;
                     self.game = None;
@@ -578,6 +582,9 @@ impl RoomCore {
                     return err(ErrorCode::WrongPhase, "seats are locked during a game");
                 }
                 let s = seat as usize;
+                if s >= self.seat_limit() && level.is_some() {
+                    return err(ErrorCode::BadSeat, "this mode has fewer seats than that");
+                }
                 if s >= MAX_SEATS || matches!(self.seats[s], Slot::Human { .. }) {
                     return err(ErrorCode::BadSeat, "that seat isn't free");
                 }
@@ -818,6 +825,33 @@ impl RoomCore {
     }
 
     // ---- the game ----------------------------------------------------------
+
+    /// How many seats the configured mode can use: Duel is two, everything
+    /// else up to four. Seats past this can't be taken in the lobby.
+    pub fn seat_limit(&self) -> usize {
+        if self.preset == "custom" {
+            return MAX_SEATS;
+        }
+        GameConfig::preset(&self.preset, MAX_SEATS as u8)
+            .map_or(MAX_SEATS, |c| (c.seats as usize).min(MAX_SEATS))
+    }
+
+    /// After a mode change, pull anyone sitting past the seat limit into a
+    /// free seat that still counts, and send bots out there home.
+    fn fit_seats(&mut self) {
+        let limit = self.seat_limit();
+        for i in limit..MAX_SEATS {
+            match self.seats[i].clone() {
+                Slot::Bot { .. } => self.seats[i] = Slot::Empty,
+                Slot::Human { .. } => {
+                    if let Some(free) = (0..limit).find(|&k| self.seats[k] == Slot::Empty) {
+                        self.seats[free] = std::mem::replace(&mut self.seats[i], Slot::Empty);
+                    }
+                }
+                Slot::Empty => {}
+            }
+        }
+    }
 
     fn start(&mut self, conn: ConnId, now: u64) -> Vec<Outbound> {
         let err = |code: ErrorCode, m: String| vec![to_conn(conn, ServerMsg::error(code, m))];

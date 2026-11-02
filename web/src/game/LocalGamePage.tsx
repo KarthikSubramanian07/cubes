@@ -61,7 +61,10 @@ export function fromHubSetup(g: GameSetup): LocalSetup {
   const seats: LocalSeat[] = g.bots.map((level, i) => {
     if (level) return { kind: "bot", level, name: LEVEL_NAMES[level] };
     const first = g.bots.indexOf(null) === i;
-    return { kind: "human", name: first && humans === 1 ? "You" : first ? g.name : SEAT_NAMES[i]! };
+    // Pass & play: the hub calls the other seats by their colours, so the
+    // first seat does too unless its player typed a name.
+    const named = g.name && g.name !== "Player" ? g.name : SEAT_NAMES[i]!;
+    return { kind: "human", name: first && humans === 1 ? "You" : first ? named : SEAT_NAMES[i]! };
   });
   return { preset: g.preset, config: g.config, seats };
 }
@@ -128,6 +131,9 @@ function LocalGame() {
     const m = new LocalMatch({ config, seats: padSeats(setup.seats, config.seats) });
     setKit(getKit(config.kit));
     setMatch(m);
+    // A new setup (or StrictMode's double run) must not leave the old match's
+    // engine and bot worker running in the background.
+    return () => m.dispose();
   }, [ready, setup]);
 
   // Subscribe to whichever match is current; dispose it on unmount.

@@ -55,7 +55,8 @@ export function cleanName(name: string | undefined): string {
  * - seats 2..4; Teams forces 4, Duel forces 2;
  * - teams implies 4 seats; sharedLight requires teams;
  * - fog radius 1..6 or null; storm values positive; 3D presets keep the cube kit;
- * - bots has exactly one entry per seat; in a bots game seat 0 is always you.
+ * - bots has exactly one entry per seat; in a bots game seat 0 is always you;
+ *   online rooms never start with bots (the hub shows their seats as open).
  */
 export function buildSetup(input: SetupInput): GameSetup {
   const info = PRESET_BY_NAME[input.preset];
@@ -84,7 +85,8 @@ export function buildSetup(input: SetupInput): GameSetup {
     const given = input.bots?.[i];
     if (input.kind === "local") bots.push(null);
     else if (input.kind === "bots") bots.push(i === 0 ? null : given ?? "flare");
-    else bots.push(given ?? null);
+    // Online rooms start with open seats for friends; the host adds bots in the lobby.
+    else bots.push(null);
   }
 
   const setup: GameSetup = {

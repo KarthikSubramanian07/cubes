@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate, useParams } from "react-router";
 import { useDocumentMeta, SITE_URL } from "@/app/meta";
+import { PRESET_BY_NAME } from "@/app/presets";
 import { isRoomCode, normalizeRoomCode } from "@/app/roomCode";
 import { cleanName, type GameSetup } from "@/app/setup";
 import { Button } from "@/ui/Button";
@@ -35,9 +36,22 @@ function rememberName(n: string): void {
   }
 }
 
-/** Map the server's lobby onto the presentational lobby's seats. */
+/** Seats the room's mode can use: Duel has two, the rest up to four. */
+export function seatLimit(preset: string): number {
+  const info = PRESET_BY_NAME[preset as keyof typeof PRESET_BY_NAME];
+  return info ? Math.max(...info.seats) : 4;
+}
+
+/** Where to send friends: this site, so local and preview builds link to themselves. */
+export function inviteUrl(code: string): string {
+  const origin = typeof window !== "undefined" && /^https?:/.test(window.location.origin) ? window.location.origin : SITE_URL;
+  return `${origin}/r/${code}`;
+}
+
+/** Map the server's lobby onto the presentational lobby's seats (only those the mode can use). */
 export function lobbySeats(lobby: Lobby, myPid: string | null): LobbySeat[] {
-  return lobby.seats.map((s): LobbySeat => {
+  const limit = seatLimit(lobby.preset);
+  return lobby.seats.filter((s, i) => i < limit || s.kind !== "empty").map((s): LobbySeat => {
     if (s.kind === "bot") return { kind: "bot", level: s.level ?? "flare" };
     if (s.kind === "human")
       return {
@@ -93,7 +107,7 @@ export function Component() {
   useEffect(() => {
     if (!lobby || !me || autoSat.current || lobby.phase !== "lobby" || me.seat !== null) return;
     if (me.host && state.setup) return;
-    const free = lobby.seats.find((s) => s.kind === "empty");
+    const free = lobby.seats.find((s, i) => s.kind === "empty" && i < seatLimit(lobby.preset));
     autoSat.current = true;
     if (free) room.send({ t: "sit", seat: free.seat });
   }, [lobby, me, state.setup, room]);
@@ -133,10 +147,10 @@ export function Component() {
   return (
     <RoomLobby
       code={code}
-      shareUrl={`${SITE_URL}/r/${code}`}
+      shareUrl={inviteUrl(code)}
       preset={preset}
       config={config ?? { dims: [20, 20, 1], shape: "square", topology: "flat", gravity: false, seats: 4, teams: false, sharedLight: false, arena: true, nodes: 12, fog: null, storm: null, crowns: false, turnSeconds: null, kit: "shards" }}
-      seats={seats.length ? seats : [{ kind: "empty" }, { kind: "empty" }, { kind: "empty" }, { kind: "empty" }]}
+      seats={seats.length ? seats : Array.from({ length: seatLimit(preset) }, () => ({ kind: "empty" as const }))}
       isHost={!!me?.host}
       yourName={name}
       connection={connection}

@@ -93,10 +93,28 @@ export function cellsAt(dims: Vec3, cells: Vec3[], at: Vec3, torus = false): num
   return out;
 }
 
+export interface SnapOptions {
+  /** Let the snap pick another orientation of the shard (touch, and the last resort in 3D). */
+  allowOrientChange?: boolean;
+  /**
+   * Lattice size. With `radius`, a target that no legal placement covers
+   * snaps to the closest placement touching a cell within `radius`
+   * (Chebyshev) of it. Used in 3D, where the cell under the pointer is often
+   * face-adjacent to your own light and so can never be covered.
+   */
+  dims?: Vec3;
+  radius?: number;
+}
+
+function chebyshev(a: Vec3, b: Vec3): number {
+  return Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
+}
+
 /**
  * Among legal placements of `piece` covering `target`, the one closest to
  * where the player is aiming: same orientation first, then smallest anchor
- * displacement. Returns null when nothing legal covers the cell.
+ * displacement. With `radius`, falls back to placements near the target.
+ * Returns null when nothing qualifies.
  */
 export function snapPlacement(
   legal: Placement[],
@@ -104,23 +122,73 @@ export function snapPlacement(
   orient: number,
   target: number,
   preferredAt: Vec3 | null,
-  allowOrientChange = false,
+  opts: boolean | SnapOptions = false,
 ): Placement | null {
+  const o: SnapOptions = typeof opts === "boolean" ? { allowOrientChange: opts } : opts;
+  const allowOrientChange = o.allowOrientChange ?? false;
+  const disp = (p: Placement) =>
+    preferredAt ? Math.abs(p.at[0] - preferredAt[0]) + Math.abs(p.at[1] - preferredAt[1]) + Math.abs(p.at[2] - preferredAt[2]) : 0;
   let best: Placement | null = null;
   let bestScore = Infinity;
   for (const p of legal) {
     if (p.piece !== piece || !p.cells.includes(target)) continue;
     const sameOrient = p.orient === orient;
     if (!sameOrient && !allowOrientChange) continue;
-    let d = 0;
-    if (preferredAt) d = Math.abs(p.at[0] - preferredAt[0]) + Math.abs(p.at[1] - preferredAt[1]) + Math.abs(p.at[2] - preferredAt[2]);
-    const score = (sameOrient ? 0 : 100) + d;
+    const score = (sameOrient ? 0 : 100) + disp(p);
     if (score < bestScore) {
       bestScore = score;
       best = p;
     }
   }
-  return best;
+  const radius = o.radius ?? 0;
+  if (best || radius <= 0 || !o.dims) return best;
+
+  // Nothing covers the target: look around it, same orientation first.
+  const dims = o.dims;
+  const t = cellCoords(dims, target);
+  for (const any of allowOrientChange ? [false, true] : [false]) {
+    for (const p of legal) {
+      if (p.piece !== piece || (!any && p.orient !== orient)) continue;
+      let d = Infinity;
+      for (const c of p.cells) d = Math.min(d, chebyshev(cellCoords(dims, c), t));
+      if (d > radius) continue;
+      const score = d * 50 + disp(p);
+      if (score < bestScore) {
+        bestScore = score;
+        best = p;
+      }
+    }
+    if (best) return best;
+  }
+  return null;
+}
+
+/**
+ * Legal placements of `piece`, nearest first to `from` (the cell the player
+ * is aiming at), for stepping through every spot a shard fits with a key.
+ * Ties keep the engine's order so the sequence is stable.
+ */
+export function fitsNear(legal: Placement[], piece: number, dims: Vec3, from: number | null): Placement[] {
+  const mine = legal.filter((p) => p.piece === piece);
+  if (from === null) return mine;
+  const t = cellCoords(dims, from);
+  const dist = (p: Placement) => {
+    let sx = 0;
+    let sy = 0;
+    let sz = 0;
+    for (const c of p.cells) {
+      const [x, y, z] = cellCoords(dims, c);
+      sx += x;
+      sy += y;
+      sz += z;
+    }
+    const n = p.cells.length;
+    return Math.hypot(sx / n - t[0], sy / n - t[1], sz / n - t[2]);
+  };
+  return mine
+    .map((p, i) => ({ p, i, d: dist(p) }))
+    .sort((a, b) => a.d - b.d || a.i - b.i)
+    .map((x) => x.p);
 }
 
 /** Pieces that have at least one legal placement right now. */

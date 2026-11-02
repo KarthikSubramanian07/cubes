@@ -16,6 +16,7 @@ import { Fx } from "./scene/Fx";
 import { Gems } from "./scene/Gems";
 import { Ghost } from "./scene/Ghost";
 import { Island } from "./scene/Island";
+import { KeyNudge } from "./scene/KeyNudge";
 import { Overlays } from "./scene/Overlays";
 import { Picker } from "./scene/Picker";
 import { Pieces } from "./scene/Pieces";
@@ -61,6 +62,7 @@ export function BoardScene(props: BoardSceneProps): JSX.Element {
       onPointerLeave={(e) => {
         releasePointer(shared, e.pointerId);
         shared.pointer.active = false;
+        shared.hover = null;
         onHover(null);
       }}
     >
@@ -216,6 +218,7 @@ function SceneRoot(props: SceneRootProps) {
         <Ghost ghost={ghost} view={view} L={L} reducedMotion={reduced} />
         <Fx engine={fx} />
         <Picker view={view} L={L} layerCut={layerCut} shared={shared} onHover={onHover} onSelect={onSelect} />
+        <KeyNudge view={view} L={L} seat={seat} layerCut={layerCut} shared={shared} onHover={onHover} />
       </group>
       <Post q={q} />
       {props.onSlow && <FrameWatch onSlow={props.onSlow} />}

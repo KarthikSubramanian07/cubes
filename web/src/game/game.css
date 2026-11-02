@@ -251,19 +251,37 @@
   }
 }
 
+/* A vertical slider on the right edge: up shows higher layers. It used to sit
+   bottom-left, right on top of the hand-written turn note. */
 .g-layer-cut {
   position: absolute;
-  left: 18px;
-  bottom: 18px;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 8px 12px;
+  padding: 10px 8px 8px;
 }
 .g-layer-cut label {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
   align-items: center;
+}
+.g-layer-cut input[type="range"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 22px;
+  height: min(180px, 30vh);
+  margin: 0;
+}
+.g-layer-cut .g-layer-val {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 3ch;
+  text-align: center;
 }
 
 /* side: seats and dock ------------------------------------------------ */
@@ -503,6 +521,20 @@
 .g-quiet:hover {
   color: var(--ink);
 }
+.g-quiet.danger {
+  color: #d0442a;
+}
+.g-resign-ask {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.g-resign-ask .g-hand {
+  font-size: 20px;
+  color: var(--ink-2);
+  margin-right: 4px;
+}
 .g-spectating {
   font-size: 22px;
   color: var(--muted);
@@ -518,6 +550,15 @@
   background: color-mix(in srgb, var(--paper) 72%, transparent);
   backdrop-filter: blur(10px) saturate(1.2);
   padding: 20px;
+}
+/* The hand-off hides the previous player's fogged view completely: a blur
+   still showed where their light was. */
+.g-overlay.handoff {
+  background: var(--paper);
+  backdrop-filter: none;
+}
+.g-overlay.handoff .g-btn-primary {
+  margin-top: 14px;
 }
 @media (prefers-reduced-motion: no-preference) {
   .g-overlay .g-sheet {
@@ -606,6 +647,14 @@
   border-color: var(--line);
   color: var(--ink);
 }
+.g-peek-back {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+}
 .g-keys {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -681,10 +730,20 @@
   .g-hand-arrow {
     display: none;
   }
+  /* Toasts go up top on phones: at the bottom they ran into the turn note. */
   .g-toasts {
-    top: auto;
-    bottom: 10px;
+    top: 8px;
     right: 10px;
+  }
+  .g-toast {
+    font-size: 18px;
+    max-width: 66vw;
+  }
+  .g-error-note {
+    top: auto;
+    bottom: 42px;
+    font-size: 20px;
+    max-width: 86vw;
   }
 }
 

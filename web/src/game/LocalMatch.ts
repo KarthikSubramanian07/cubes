@@ -241,7 +241,9 @@ export class LocalMatch {
     return this.game.log();
   }
 
+  /** Free the engine and stop the bots. Safe to call more than once. */
   dispose(): void {
+    if (this.disposed) return;
     this.disposed = true;
     if (this.botTimer) clearTimeout(this.botTimer);
     this.invalidateBelief();
