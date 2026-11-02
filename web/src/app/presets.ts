@@ -39,7 +39,7 @@ const base: GameConfig = {
 /** Default config for each preset at its default seat count. */
 export const PRESET_CONFIGS: Record<PresetName, GameConfig> = {
   plane: { ...base },
-  duel: { ...base, dims: [14, 14, 1], seats: 2, nodes: 8 },
+  duel: { ...base, dims: [14, 14, 1], seats: 2, nodes: 6 },
   pure: { ...base, arena: false, nodes: 0 },
   fog: { ...base, dims: [18, 18, 1], fog: 2 },
   storm: { ...base, storm: { start: 6, every: 3, minSpan: 8 } },
@@ -152,7 +152,12 @@ export function presetConfig(name: PresetName, seats?: number): GameConfig {
   const config = clone(PRESET_CONFIGS[name]);
   const n = seats && info.seats.includes(seats) ? seats : info.defaultSeats;
   config.seats = n;
-  if (n === 2 && name === "plane") config.dims = [14, 14, 1];
-  if (n === 2 && name === "stack") config.dims = [6, 6, 6];
+  // Mirrors GameConfig::preset in crates/engine/src/config.rs; a test keeps them equal.
+  if (n === 2) {
+    if (config.arena) config.nodes = config.kit === "cubes" ? 4 : 6;
+    if (name === "plane" || name === "pure" || name === "storm") config.dims = [14, 14, 1];
+    if (name === "fog" || name === "torus") config.dims = [14, 14, 1];
+    if (name === "stack") config.dims = [6, 6, 6];
+  }
   return config;
 }
