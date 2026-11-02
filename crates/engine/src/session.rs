@@ -644,6 +644,20 @@ impl Game {
             .collect()
     }
 
+    /// Every position of this game from the start, as public (unfogged)
+    /// views: the opening board, then one per logged action. Rebuilt from the
+    /// seed and the log, so it is exact. For post-game replays.
+    pub fn frames(&self) -> Result<Vec<View>, GameError> {
+        let mut g = Game::new(self.data.config.clone(), self.data.seed)?;
+        let mut out = Vec::with_capacity(self.data.log.len() + 1);
+        out.push(g.view(None));
+        for e in &self.data.log {
+            g.apply(e.seat as usize, e.action.clone())?;
+            out.push(g.view(None));
+        }
+        Ok(out)
+    }
+
     /// Replay a log from scratch; used to verify determinism.
     pub fn replay(config: GameConfig, seed: u64, log: &[LogEntry]) -> Result<Game, GameError> {
         let mut g = Game::new(config, seed)?;
@@ -752,6 +766,22 @@ mod tests {
         assert_eq!(g2.data, g.data);
         let g3 = Game::replay(g.data.config.clone(), 5, &g.data.log).unwrap();
         assert_eq!(g3.data.state, g.data.state);
+    }
+
+    #[test]
+    fn frames_rebuild_every_position_exactly() {
+        // A seed above 2^53 must survive: the frames come from the game's own seed.
+        let seed = u64::MAX - 7;
+        let mut g = Game::new(GameConfig::preset("fog", 2).unwrap(), seed).unwrap();
+        play_out(&mut g, 24);
+        let frames = Game::from_json(&g.to_json()).unwrap().frames().unwrap();
+        assert_eq!(frames.len(), g.data.log.len() + 1);
+        assert_eq!(frames[0].ply, 0);
+        let last = frames.last().unwrap();
+        assert_eq!(last.cells, g.view(None).cells);
+        assert_eq!(last.ply, g.view(None).ply);
+        // Frames are public views: no seat's fog applies.
+        assert!(frames.iter().all(|f| f.seat.is_none()));
     }
 
     #[test]

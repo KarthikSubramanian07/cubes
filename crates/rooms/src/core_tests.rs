@@ -409,6 +409,7 @@ fn a_bot_game_runs_to_completion_by_ticking_time() {
     let mut views = 0;
     let mut wakes = 0;
     let mut last_ply = 0;
+    let mut replays = Vec::new();
     while r.core.phase() == RoomPhase::Playing {
         let before = r.now;
         r.wake();
@@ -421,6 +422,10 @@ fn a_bot_game_runs_to_completion_by_ticking_time() {
             .iter()
             .filter(|m| matches!(m, ServerMsg::View { .. }))
             .count();
+        replays.extend(msgs.into_iter().filter_map(|m| match m {
+            ServerMsg::Replay { game } => Some(game),
+            _ => None,
+        }));
         let ply = r.turn().0;
         assert!(ply >= last_ply);
         last_ply = ply;
@@ -435,6 +440,18 @@ fn a_bot_game_runs_to_completion_by_ticking_time() {
     assert!(scores.iter().any(|&s| s > 0));
     assert!(v.winners.is_some());
     assert_eq!(r.lobby().phase, RoomPhase::Over);
+    // The finished match arrives once, and rebuilds the final board exactly.
+    assert_eq!(replays.len(), 1, "one replay at the end");
+    let frames = Game::from_json(&replays[0]).unwrap().frames().unwrap();
+    assert_eq!(frames.last().unwrap().cells, v.cells);
+    assert_eq!(frames.len(), g.data.log.len() + 1);
+    // Someone arriving after the game gets it too.
+    let late = r.connect();
+    r.send(late, json!({"t":"hello","pid":"carol-0003","name":"Carol"}));
+    assert!(r
+        .take(late)
+        .iter()
+        .any(|m| matches!(m, ServerMsg::Replay { .. })));
     // Nothing left to do but the idle timer.
     assert_eq!(r.core.next_deadline(), Some(r.core.last_activity + IDLE_MS));
 }

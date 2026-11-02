@@ -789,6 +789,9 @@ impl RoomCore {
         if let Some(g) = self.game() {
             let seat = self.seat_of(&pid).map(|s| s as usize);
             out.push(to_conn(conn, view_msg(g.view(seat))));
+            if self.phase == RoomPhase::Over {
+                out.push(to_conn(conn, replay_msg(g)));
+            }
         }
         out.extend(self.schedule(now, false));
         if let (Some(ends), Some((_, seat))) = (self.turn_deadline, self.clock_key) {
@@ -978,6 +981,12 @@ impl RoomCore {
                 });
             }
             self.clear_timers();
+            if let Some(g) = self.game() {
+                out.push(Outbound {
+                    to: Target::All,
+                    msg: replay_msg(g),
+                });
+            }
             out.push(self.lobby_msg());
         } else {
             out.extend(self.schedule(now, same_turn));
@@ -1275,6 +1284,10 @@ fn view_msg(view: View) -> ServerMsg {
     ServerMsg::View {
         view: Box::new(view),
     }
+}
+
+fn replay_msg(g: &Game) -> ServerMsg {
+    ServerMsg::Replay { game: g.to_json() }
 }
 
 fn chat_msg(line: &ChatLine) -> ServerMsg {
