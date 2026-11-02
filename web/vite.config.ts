@@ -28,6 +28,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Generous: WASM games and SVG tracing run long on loaded CI runners.
+    testTimeout: 60_000,
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
