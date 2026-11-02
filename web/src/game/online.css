@@ -1,0 +1,63 @@
+/* Chat and emotes in the game dock (online rooms). */
+.g-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+}
+.g-emotes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.g-emote {
+  font: 500 18px/1 var(--hand);
+  padding: 5px 10px 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: transform 0.2s var(--ease), border-color 0.2s;
+}
+.g-emote:hover {
+  transform: translateY(-2px) rotate(-3deg);
+  border-color: var(--accent);
+}
+.g-chat-toggle {
+  margin-left: auto;
+  font: 500 12px/1 var(--mono);
+  padding: 7px 10px;
+}
+.g-chat-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 160px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.g-chat-lines li.emote {
+  font: 500 19px/1.1 var(--hand);
+}
+.g-chat-empty {
+  color: var(--muted);
+  font-size: 19px;
+}
+.g-chat-form input {
+  width: 100%;
+  font: 400 14px/1 var(--sans);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+}
+.g-chat-form input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

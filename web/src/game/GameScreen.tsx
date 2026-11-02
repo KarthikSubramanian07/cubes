@@ -57,6 +57,8 @@ export interface GameScreenProps {
   clock?: { seat: number; endsAt: number } | null;
   /** Extra chrome (chat, emotes) for online games. */
   aside?: React.ReactNode;
+  /** An error from outside the controller (e.g. the server rejected a move). */
+  notice?: { message: string; at: number } | null;
   sound?: {
     place?(o: { size: number; seat: number; combo?: number; pan?: number }): void;
     invalid?(): void;
@@ -150,6 +152,10 @@ export function GameScreen(props: GameScreenProps) {
     setToasts((t) => [...t.slice(-3), { id, text, seat: s }]);
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4200);
   };
+
+  useEffect(() => {
+    if (props.notice) setError(props.notice.message);
+  }, [props.notice]);
 
   useEffect(() => {
     if (!error) return;

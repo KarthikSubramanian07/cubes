@@ -16,6 +16,7 @@
 
   position: fixed;
   inset: 0;
+  z-index: 40;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
   grid-template-rows: auto minmax(0, 1fr);

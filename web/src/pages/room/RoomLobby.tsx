@@ -33,6 +33,14 @@ export interface RoomLobbyProps {
   /** Host only: fill an empty seat with a bot, or change its level. */
   onSetBot: (seat: number, level: AiLevel | null) => void;
   onLeave: () => void;
+  /** Online rooms: take an empty seat (you aren't seated yet). */
+  onSit?: (seat: number) => void;
+  /** Online rooms: give up your seat and watch instead. */
+  onStand?: () => void;
+  /** Host only: remove another player from their seat. */
+  onKick?: (seat: number) => void;
+  /** People watching without a seat. */
+  spectators?: readonly string[];
 }
 
 /** Can the host start? Two or more seats filled, and every connected human ready. */
@@ -62,6 +70,10 @@ export function RoomLobby({
   onStart,
   onSetBot,
   onLeave,
+  onSit,
+  onStand,
+  onKick,
+  spectators = [],
 }: RoomLobbyProps) {
   const toast = useToast();
   const nameId = useId();
@@ -135,6 +147,11 @@ export function RoomLobby({
               {s.kind === "empty" && (
                 <>
                   <SeatChip seat={i} label={<span className="muted">waiting…</span>} />
+                  {onSit && !me && (
+                    <button type="button" className="seat__bot-btn seat__sit" onClick={() => onSit(i)}>
+                      sit here
+                    </button>
+                  )}
                   {isHost && (
                     <div className="seat__actions" role="group" aria-label={`Fill seat ${i + 1} with a bot`}>
                       {AI_LEVELS.map((l) => (
@@ -154,7 +171,17 @@ export function RoomLobby({
                     {s.host && <span className="seat__tag">host</span>}
                     {s.connected === false && <span className="seat__tag">away</span>}
                   </span>
-                  <span className={s.ready || s.host ? "seat__state is-ready" : "seat__state"}>{s.host ? "hosting" : s.ready ? "ready" : "not ready"}</span>
+                  {s.you && onStand ? (
+                    <button type="button" className="seat__remove" onClick={onStand}>
+                      stand up
+                    </button>
+                  ) : !s.you && isHost && onKick ? (
+                    <button type="button" className="seat__remove" onClick={() => onKick(i)} aria-label={`Remove ${s.name} from seat ${i + 1}`}>
+                      remove
+                    </button>
+                  ) : (
+                    <span className={s.ready || s.host ? "seat__state is-ready" : "seat__state"}>{s.host ? "hosting" : s.ready ? "ready" : "not ready"}</span>
+                  )}
                 </>
               )}
               {s.kind === "bot" && (
@@ -175,6 +202,12 @@ export function RoomLobby({
             </li>
           ))}
         </ol>
+
+        {spectators.length > 0 && (
+          <p className="lobby__hint">
+            Watching: {spectators.join(", ")}
+          </p>
+        )}
 
         {alone && (
           <div className="lobby__empty">
@@ -216,6 +249,8 @@ export function RoomLobby({
               <Button size="lg" iconRight={<ArrowRight />} disabled={!ready} onClick={onStart}>
                 Start game
               </Button>
+            ) : onSit ? (
+              <p className="lobby__hint">{me ? "You're in. The host starts the game." : "Take an empty seat to play, or stay and watch."}</p>
             ) : (
               <Button size="lg" variant={me?.ready ? "ghost" : "primary"} onClick={() => onReady(!me?.ready)}>
                 {me?.ready ? "Not ready" : "I'm ready"}
