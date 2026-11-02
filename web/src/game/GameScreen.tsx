@@ -11,6 +11,7 @@ import { useController } from "./useController";
 import { diffPlaced } from "./board";
 import { ShardIcon } from "./ui/ShardIcon";
 import { ReplayBar } from "./ui/ReplayBar";
+import { buzz } from "./haptics";
 import "./game.css";
 
 const PaperBoard = lazy(() => import("@/render2d").then((m) => ({ default: m.PaperBoard })));
@@ -194,6 +195,7 @@ export function GameScreen(props: GameScreenProps) {
       onError: (reason) => {
         setError(reason);
         props.sound?.invalid?.();
+        buzz("invalid");
       },
     },
   );
@@ -246,16 +248,26 @@ export function GameScreen(props: GameScreenProps) {
       if (e.type === "placed" && e.cells.length) {
         const x = (e.cells.reduce((a, c) => a + (c % w), 0) / e.cells.length / Math.max(1, w - 1)) * 2 - 1;
         props.sound?.place?.({ size: e.cells.length, seat: e.seat, pan: x });
+        if (e.seat === seat) buzz("place");
       }
-      if (e.type === "node") props.sound?.node?.();
-      if (e.type === "shattered") props.sound?.shatter?.();
+      if (e.type === "node") {
+        props.sound?.node?.();
+        if (e.seat === seat) buzz("node");
+      }
+      if (e.type === "shattered") {
+        props.sound?.shatter?.();
+        if (e.seat === seat || e.victim === seat) buzz("shatter");
+      }
       if (e.type === "misfire") props.sound?.misfire?.();
       if (e.type === "storm") props.sound?.storm?.();
       if (e.type === "dark") props.sound?.dark?.(e.seat);
       if (e.type === "scanned") props.sound?.scan?.();
       if (e.type === "gameOver") {
         const won = seat !== null && e.winners.includes(seat);
-        if (won) props.sound?.win?.();
+        if (won) {
+          props.sound?.win?.();
+          buzz("win");
+        }
         else props.sound?.lose?.();
       }
     }
