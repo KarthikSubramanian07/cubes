@@ -10,6 +10,7 @@ use crate::args::Args;
 /// Everything the report needs from one finished game.
 #[derive(Clone, Debug, Default)]
 pub struct GameRecord {
+    pub seed: u64,
     /// Bot index (into `--bots`) per seat.
     pub bots: Vec<usize>,
     pub scores: Vec<i32>,
@@ -72,6 +73,7 @@ pub fn play(args: &Args, cfg: &GameConfig, g: usize) -> GameRecord {
         .collect();
     let plain = BotOptions::default();
     let mut rec = GameRecord {
+        seed,
         bots: bots.clone(),
         seats: vec![SeatRecord::default(); seats],
         ..Default::default()

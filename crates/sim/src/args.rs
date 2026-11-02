@@ -13,6 +13,7 @@ pub struct Args {
     pub budget_ms: f64,
     pub iters: Option<u32>,
     pub opening: u32,
+    pub dump: Option<String>,
     pub threads: usize,
     pub seed: u64,
     pub json: bool,
@@ -51,6 +52,8 @@ OPTIONS:
   --w0..--w3 JSON weight overrides for the bot at that index in --bots
                   (so --bots flare,flare --w1 '{...}' is an A/B test)
   --no-timing     skip the per-move movegen timing sample (faster)
+  --dump PATH     also write one JSON line per game (seed, bots, scores,
+                  winners, plies) for offline analysis
   --json          print the report as JSON
   --bench         run the move generation micro benchmark suite
   --reps N        repetitions per position in --bench
@@ -66,6 +69,7 @@ pub fn parse(raw: &[String]) -> Result<Args, String> {
         budget_ms: 50.0,
         iters: None,
         opening: 0,
+        dump: None,
         threads: std::thread::available_parallelism()
             .map(|n| n.get())
             .unwrap_or(4),
@@ -122,6 +126,10 @@ pub fn parse(raw: &[String]) -> Result<Args, String> {
             }
             "--iters" => {
                 a.iters = Some(num(&need(i, flag)?)? as u32);
+                i += 1;
+            }
+            "--dump" => {
+                a.dump = Some(need(i, flag)?);
                 i += 1;
             }
             "--opening" => {

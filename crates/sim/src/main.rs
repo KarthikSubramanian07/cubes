@@ -79,6 +79,24 @@ fn main() {
         .into_iter()
         .map(|r| r.expect("every game finished"))
         .collect();
+    if let Some(path) = &args.dump {
+        let mut out = String::new();
+        for r in &recs {
+            let line = serde_json::json!({
+                "seed": r.seed,
+                "bots": r.bots,
+                "scores": r.scores,
+                "winners": r.winners,
+                "plies": r.plies,
+            });
+            out.push_str(&line.to_string());
+            out.push('\n');
+        }
+        if let Err(e) = std::fs::write(path, out) {
+            eprintln!("error: --dump {path}: {e}");
+            std::process::exit(1);
+        }
+    }
     let rep = report::build(&args, &cfg, &recs, started.elapsed().as_secs_f64());
     if args.json {
         println!("{}", serde_json::to_string_pretty(&rep).unwrap());
