@@ -220,7 +220,7 @@ function ChapterLive({ chapter, index, total, reduced, run, onComplete, onNext, 
       const ex = explainPlacement(view, LEARNER, cells, { leap: ctl.leap, anchor });
       if (ex) return { id: "err", cell: ex.cell, text: ex.text, dir: "ne", mark: "cross", reach: 1.3 };
       if (!cells) return null;
-      return { id: "err", cell: cells[0], text: run.currentStep.allowWhy ?? "legal, but not what this chapter wants", dir: "ne", reach: 1.3 };
+      return { id: "err", cell: cells[0], text: run.currentStep.allowWhy ?? "legal, but not what this lesson is after", dir: "ne", reach: 1.3 };
     },
     [view, ctl.leap, run],
   );
@@ -281,11 +281,11 @@ function ChapterLive({ chapter, index, total, reduced, run, onComplete, onNext, 
         : ctl.pending
             ? "tap again to place"
             : ctl.mode === "shatter"
-              ? "pick an enemy cell to shatter"
+              ? "pick an opponent's square to shatter"
               : ctl.piece === null
-                ? "pick a shard"
+                ? "pick a piece"
                 : ctl.leap
-                  ? "leaping: two cells of reach"
+                  ? "Leap is on: two squares of reach"
                   : null;
 
   // Test hook: lets the e2e suite ask for the intended move and where to click.
