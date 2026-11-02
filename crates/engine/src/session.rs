@@ -684,6 +684,14 @@ impl Game {
             let mut bot = Bot::new(&belief.ctx, level, seed, budget_ms, clock).with_options(opts);
             bot.can_scan = self.data.config.arena;
             bot.scanning = self.scanning(seat);
+            let w = self.ctx.lat.w as usize;
+            let mut unseen = vec![0u64; self.ctx.geo.rows];
+            for (i, v) in self.visible(seat).iter().enumerate() {
+                if !v && self.ctx.lat.playable[i] {
+                    unseen[i / w] |= 1 << (i % w);
+                }
+            }
+            bot.unseen = unseen;
             let action = bot.next_action(belief.state(), seat)?;
             // A belief-based shatter must target something we can see.
             if let Action::Shatter { cell } = action {

@@ -320,6 +320,10 @@ pub struct Bot<'a> {
     pub can_scan: bool,
     /// True when the bot is currently scanning.
     pub scanning: bool,
+    /// Under fog: cells the seat can't currently see (canonical rows; empty
+    /// when everything is visible). Placements avoid them when they can,
+    /// since what's remembered there may have changed (a misfire).
+    pub unseen: Vec<u64>,
     /// Optional cap on Nova's search iterations. With a cap and a large
     /// budget, Nova is fully reproducible for a given seed.
     pub max_iters: Option<u32>,
@@ -354,6 +358,7 @@ impl<'a> Bot<'a> {
             clock,
             can_scan: false,
             scanning: false,
+            unseen: Vec::new(),
             max_iters: None,
             weights: Weights::default(),
             last_iters: 0,
@@ -450,6 +455,20 @@ impl<'a> Bot<'a> {
                     pos.board
                         .gen_moves(ctx, seat, kit, GenMode::SparkLeap, sc, &mut out, false);
                 }
+            }
+        }
+        // Under fog, prefer placements entirely in sight.
+        if !self.unseen.is_empty() {
+            let w = ctx.geo.w;
+            let unseen = &self.unseen;
+            let blind = |m: &Move| {
+                ctx.table
+                    .cells(m.pid as usize)
+                    .iter()
+                    .any(|&c| unseen[c as usize / w] >> (c as usize % w) & 1 != 0)
+            };
+            if out.iter().any(|m| !blind(m)) {
+                out.retain(|m| !blind(m));
             }
         }
         // Early game: big shards first, like a sensible human.
