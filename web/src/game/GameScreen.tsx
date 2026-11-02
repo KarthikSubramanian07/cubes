@@ -134,6 +134,8 @@ export function GameScreen(props: GameScreenProps) {
   const [layerCut, setLayerCut] = useState<number | null>(null);
   // The result sheet can be tucked away to look at the final board.
   const [peek, setPeek] = useState(false);
+  // Resigning asks first, inline; the browser's confirm() box looked like an error.
+  const [resigning, setResigning] = useState(false);
   const prevView = useRef<View | null>(null);
   const toastId = useRef(0);
   const three = view.config.dims[2] > 1;
@@ -487,15 +489,28 @@ export function GameScreen(props: GameScreenProps) {
                   undo
                 </button>
               )}
-              {!over && props.onResign && (
-                <button
-                  className="g-quiet"
-                  onClick={() => {
-                    if (confirm("Go dark for the rest of this game?")) props.onResign?.();
-                  }}
-                >
+              {!over && props.onResign && !resigning && (
+                <button className="g-quiet" onClick={() => setResigning(true)}>
                   resign
                 </button>
+              )}
+              {!over && props.onResign && resigning && (
+                <span className="g-resign-ask" role="group" aria-label="Confirm resign">
+                  <span className="g-hand">go dark for good?</span>
+                  <button
+                    className="g-quiet danger"
+                    autoFocus
+                    onClick={() => {
+                      setResigning(false);
+                      props.onResign?.();
+                    }}
+                  >
+                    yes, resign
+                  </button>
+                  <button className="g-quiet" onClick={() => setResigning(false)}>
+                    keep playing
+                  </button>
+                </span>
               )}
             </div>
           </>
