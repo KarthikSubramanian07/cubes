@@ -106,7 +106,7 @@ function describe(p: GameScreenProps, e: GameEvent): string | null {
     case "scanned":
       return `${n(e.seat)} used Scan and can see everything now`;
     case "dark":
-      return `${n(e.seat)} is out of moves and watches from here`;
+      return p.view?.seats[e.seat]?.resigned ? `${n(e.seat)} resigned. respect.` : `${n(e.seat)} is out of moves and watches from here`;
     case "storm":
       return "the storm destroyed the outer ring. mind the edge";
     case "placed":
@@ -144,7 +144,7 @@ export function logLine(p: GameScreenProps, e: GameEvent): { text: string; seat:
     case "scanned":
       return { text: `${n(e.seat)} used Scan`, seat: e.seat };
     case "dark":
-      return { text: `${n(e.seat)} is out of moves`, seat: e.seat };
+      return { text: p.view?.seats[e.seat]?.resigned ? `${n(e.seat)} resigned` : `${n(e.seat)} is out of moves`, seat: e.seat };
     case "storm":
       return { text: "storm: outer ring destroyed", seat: null };
     case "gameOver":
