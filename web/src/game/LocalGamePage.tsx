@@ -13,6 +13,7 @@ import { getKit, getPreset, loadEngine, validateConfig } from "@/engine/engine";
 import type { AiLevel, GameConfig, Kit, PresetName } from "@/engine/types";
 import { SEAT_NAMES } from "@/engine/types";
 import { SoundProvider, useSound } from "@/audio";
+import type { GameSetup } from "@/app/setup";
 import { LocalMatch, type LocalSeat, type MatchSnapshot } from "./LocalMatch";
 import { GameScreen } from "./GameScreen";
 
@@ -54,6 +55,17 @@ export function setupFromQuery(search: string): LocalSetup {
   return { preset, seats };
 }
 
+/** Convert the play hub's GameSetup (one bot level or null per seat) into seats. */
+export function fromHubSetup(g: GameSetup): LocalSetup {
+  const humans = g.bots.filter((b) => b === null).length;
+  const seats: LocalSeat[] = g.bots.map((level, i) => {
+    if (level) return { kind: "bot", level, name: LEVEL_NAMES[level] };
+    const first = g.bots.indexOf(null) === i;
+    return { kind: "human", name: first && humans === 1 ? "You" : first ? g.name : SEAT_NAMES[i]! };
+  });
+  return { preset: g.preset, config: g.config, seats };
+}
+
 function configFor(setup: LocalSetup): GameConfig {
   const base = setup.config ?? getPreset(setup.preset, setup.seats.length);
   // Presets like Teams fix their seat count; pad with bots to match.
@@ -84,10 +96,11 @@ function LocalGame() {
   const location = useLocation();
   const navigate = useNavigate();
   const sound = useSound();
-  const setup = useMemo<LocalSetup>(
-    () => (location.state as { setup?: LocalSetup } | null)?.setup ?? setupFromQuery(location.search),
-    [location.state, location.search],
-  );
+  const setup = useMemo<LocalSetup>(() => {
+    const given = (location.state as { setup?: GameSetup | LocalSetup } | null)?.setup;
+    if (given && "bots" in given) return fromHubSetup(given);
+    return given ?? setupFromQuery(location.search);
+  }, [location.state, location.search]);
   const [ready, setReady] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [match, setMatch] = useState<LocalMatch | null>(null);
