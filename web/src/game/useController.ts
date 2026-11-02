@@ -131,9 +131,9 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
 
   const hint = useMemo(() => {
     if (!canAct) return null;
-    if (mode === "shatter") return "pick an enemy cell to shatter";
-    if (piece === null) return playable.size ? "your move · pick a shard" : "no shard fits. try a surge";
-    if (ghost && !ghost.valid) return "corners only. never along a face";
+    if (mode === "shatter") return "tap an opponent's square to destroy it";
+    if (piece === null) return playable.size ? "your turn · pick a piece below" : "nothing fits · try a power-up";
+    if (ghost && !ghost.valid) return "touch your colour at a corner, never a side";
     return null;
   }, [canAct, mode, piece, playable, ghost]);
 
@@ -198,7 +198,7 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
       }
       if (mode === "shatter") {
         if (marks.targets.includes(target.cell)) void submit({ type: "shatter", cell: target.cell });
-        else opts.onError?.("you can't shatter that");
+        else opts.onError?.("you can only shatter an opponent's square");
         return;
       }
       if (piece === null) return;
@@ -219,10 +219,10 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
           setOrient(snapped.orient);
           setPinned(snapped);
           setPinVia("touch");
-        } else opts.onError?.("nothing fits there");
+        } else opts.onError?.("that piece doesn't fit there");
         return;
       }
-      if (!placeGhost()) opts.onError?.(ghost ? "corners only. never along a face" : "off the board");
+      if (!placeGhost()) opts.onError?.(ghost ? "it must touch your colour at a corner, never a side" : "that's off the board");
     },
     [canAct, seat, mode, marks, piece, pinned, orient, legal, view.config.dims, three, ghost, placeGhost, submit, transform, orientsOf, opts],
   );
@@ -230,7 +230,7 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
   const setLeap = useCallback(
     (on: boolean) => {
       if (on && charge < SURGE_LEAP) {
-        opts.onError?.("leap needs 2 charge");
+        opts.onError?.("leap costs 2 charge · cover glowing nodes to earn it");
         return;
       }
       setPinned(null);
@@ -242,7 +242,7 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
   const setMode = useCallback(
     (m: Mode) => {
       if (m === "shatter" && (charge < SURGE_SHATTER || view.shatteredThisTurn)) {
-        opts.onError?.(view.shatteredThisTurn ? "one shatter per turn" : "shatter needs 3 charge");
+        opts.onError?.(view.shatteredThisTurn ? "one shatter per turn" : "shatter costs 3 charge · cover glowing nodes to earn it");
         return;
       }
       setPinned(null);
@@ -261,7 +261,7 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
       if (p === null) {
         const best = [...playable].filter((i) => i !== kit.sparkIndex).sort((a, b) => kit.pieces[b]!.size - kit.pieces[a]!.size || a - b)[0];
         if (best === undefined) {
-          opts.onError?.("no shard fits anywhere");
+          opts.onError?.("none of your pieces fit right now");
           return;
         }
         p = best;
@@ -275,7 +275,7 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
         cycle.current = c;
       }
       if (!c.list.length) {
-        opts.onError?.("that shard doesn't fit anywhere");
+        opts.onError?.("that piece doesn't fit anywhere right now");
         return;
       }
       c.index = (c.index + dir + c.list.length) % c.list.length;

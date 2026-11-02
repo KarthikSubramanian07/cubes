@@ -348,8 +348,8 @@ export function GameScreen(props: GameScreenProps) {
                   {s.charge === null ? "⚡?" : `⚡${s.charge}`}
                 </span>
               )}
-              <span className="g-seat-left" title="Shards left">
-                {s.piecesLeft} left
+              <span className="g-seat-left" title="Pieces left to place">
+                {s.piecesLeft} pieces left
               </span>
               {props.thinking === s.seat && <span className="g-thinking" aria-label="thinking" />}
               {active && clockLeft !== null && props.clock?.seat === s.seat && (
@@ -395,7 +395,7 @@ export function GameScreen(props: GameScreenProps) {
 
         {myTurn && !over && (
           <div className="g-turn-note g-hand" aria-live="polite">
-            <span>{ctl.hint ?? (ctl.pendingVia === "key" ? "enter places it · n for the next spot" : ctl.pending ? "tap again to place" : "your move")}</span>
+            <span>{ctl.hint ?? (ctl.pendingVia === "key" ? "enter to place · n for the next spot" : ctl.pending ? "tap again to place" : lastPointer === "touch" ? "tap the board to place" : three ? "click to place · r t g turn it" : "click to place · r rotates · f flips")}</span>
             <svg viewBox="0 0 80 60" fill="none" aria-hidden className="g-hand-arrow">
               <path d="M8 6 C 30 4, 56 16, 64 44" />
               <path d="M54 38 L 65 47 L 70 33" />
@@ -691,8 +691,8 @@ function Help({ three, arena, fog, onClose }: { three: boolean; arena: boolean; 
         <p className="g-hand">the short version</p>
         <h2>Corners only. Never a face.</h2>
         <p>
-          Each shard must touch your light at a corner and may never touch your own light along a {three ? "face" : "side"}. Touch
-          anyone else however you like. Can't move? You go dark.
+          Each piece must touch one of your own pieces at a corner, and never along a {three ? "face" : "side"}. Touch
+          anyone else's pieces however you like. If none of your pieces fit, you're out, but everything you placed still scores.
         </p>
         <dl className="g-keys">
           <dt>1–0</dt>

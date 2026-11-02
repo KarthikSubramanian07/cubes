@@ -86,6 +86,6 @@ export function explainPlacement(view: View, seat: number, cells: number[] | nul
     return null;
   }
   const linked = cells.some((c) => link[c]!.some((n) => lights(view.cells[n]!)));
-  if (!linked) return { problem: "no-link", cell: cells[0]!, text: "it has to touch your light at a corner" };
+  if (!linked) return { problem: "no-link", cell: cells[0]!, text: "it must touch one of your pieces at a corner" };
   return null;
 }
