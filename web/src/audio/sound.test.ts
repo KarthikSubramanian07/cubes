@@ -1,5 +1,6 @@
 import { DEFAULT_CUE_PARAMS, fireCue } from "./lab";
 import { CUE_NAMES, createSound, installUnlock, volumeToGain, type CreateSoundOptions } from "./sound";
+import { MAX_VOICES } from "./synth";
 import { MockAudioContext, MockOscillator, asContext, memoryStorage } from "./testing/mockAudioContext";
 
 function setup(mock = new MockAudioContext(), extra: CreateSoundOptions = {}) {
@@ -159,11 +160,12 @@ describe("with a running context", () => {
 
   test("the voice cap drops cues instead of piling up", () => {
     const { sound, clock } = setup();
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 60; i++) {
       sound.place({ size: 5, seat: i % 4, combo: 4 });
       clock.advance(20);
     }
-    expect(sound.stats().voices).toBeLessThan(96 + 40);
+    // One cue may straddle the cap, but never more.
+    expect(sound.stats().voices).toBeLessThan(MAX_VOICES + 40);
     expect(sound.stats().skipped).toBeGreaterThan(0);
   });
 

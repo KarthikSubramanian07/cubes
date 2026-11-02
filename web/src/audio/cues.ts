@@ -32,15 +32,15 @@ export function hover(s: Synth): void {
   s.tone({
     freq: 2350 * s.rand(0.97, 1.03),
     attack: 0.001,
-    decay: 0.028,
-    peak: 0.022,
+    decay: 0.03,
+    peak: 0.034,
     wet: 0,
   });
 }
 
 export function rotate(s: Synth): void {
-  s.tone({ freq: 880, glideTo: 1180, glideTime: 0.05, attack: 0.002, decay: 0.07, peak: 0.045, wet: 0.08 });
-  s.noise({ attack: 0.001, decay: 0.025, peak: 0.03, filter: { type: "bandpass", freq: 3200, q: 2.2 }, wet: 0 });
+  s.tone({ freq: 880, glideTo: 1180, glideTime: 0.05, attack: 0.002, decay: 0.07, peak: 0.07, wet: 0.08 });
+  s.noise({ attack: 0.001, decay: 0.025, peak: 0.045, filter: { type: "bandpass", freq: 3200, q: 2.2 }, wet: 0 });
 }
 
 export function flip(s: Synth): void {
@@ -274,9 +274,9 @@ export function tick(s: Synth, secondsLeft: number): void {
   // 0 when relaxed, 1 at the last second.
   const u = sec > 5 ? 0 : (6 - sec) / 5;
   const f = 1050 * (1 + u * 0.5);
-  s.tone({ freq: f, attack: 0.001, decay: 0.03 + u * 0.02, peak: 0.028 + u * 0.06, filter: { type: "bandpass", freq: f, q: 3 }, type: "triangle", wet: 0.05 + u * 0.1 });
-  if (u > 0) s.tone({ freq: f * 2.01, attack: 0.001, decay: 0.03, peak: 0.02 * u, wet: 0.1 });
-  if (sec <= 2) s.tone({ freq: f * 1.12, at: 0.12, attack: 0.001, decay: 0.035, peak: 0.05, type: "triangle", wet: 0.1 });
+  s.tone({ freq: f, attack: 0.001, decay: 0.04 + u * 0.02, peak: 0.09 + u * 0.08, filter: { type: "bandpass", freq: f, q: 2 }, type: "triangle", wet: 0.05 + u * 0.1 });
+  if (u > 0) s.tone({ freq: f * 2.01, attack: 0.001, decay: 0.035, peak: 0.035 * u, wet: 0.1 });
+  if (sec <= 2) s.tone({ freq: f * 1.12, at: 0.12, attack: 0.001, decay: 0.04, peak: 0.08, type: "triangle", wet: 0.1 });
 }
 
 export function win(s: Synth): void {
@@ -319,7 +319,7 @@ export function chat(s: Synth): void {
 }
 
 export function uiClick(s: Synth): void {
-  s.tone({ freq: 1750 * s.rand(0.98, 1.02), attack: 0.001, decay: 0.018, peak: 0.035, wet: 0 });
+  s.tone({ freq: 1750 * s.rand(0.98, 1.02), attack: 0.001, decay: 0.022, peak: 0.06, wet: 0 });
   s.noise({ attack: 0.001, decay: 0.006, peak: 0.02, filter: { type: "highpass", freq: 4000 }, wet: 0 });
 }
 
