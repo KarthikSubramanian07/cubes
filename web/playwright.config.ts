@@ -22,8 +22,11 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
+    // Phones and tablets in Safari's engine, with touch.
+    { name: "webkit-devices", testMatch: /devices\.spec\.ts/, use: { browserName: "webkit" } },
     {
       name: "chromium",
+      testIgnore: /devices\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         // Real GPU on macOS (Metal via ANGLE); software WebGL elsewhere (CI).
