@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useDocumentMeta } from "@/app/meta";
 import { makeRoomCode } from "@/app/roomCode";
 import { setupPath, type GameSetup, type SetupKind } from "@/app/setup";
@@ -57,6 +57,9 @@ export function Component() {
           Pull up a <em>chair</em>.
         </h1>
         <p className="lede">Three choices and you're in. Everything past step three is optional, and most of it is for people who have already lost a few games.</p>
+        <p className="muted">
+          New here? <Link to="/learn">Learn in three minutes</Link> first.
+        </p>
         <HandNote className="play__head-note annot" tilt={-4} arrow="down-left" delay={300}>
           step three is optional-ish
         </HandNote>

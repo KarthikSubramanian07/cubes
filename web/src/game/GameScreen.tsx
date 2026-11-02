@@ -654,6 +654,13 @@ function Help({ three, arena, fog, onClose }: { three: boolean; arena: boolean; 
             </>
           )}
         </dl>
+        <p className="g-muted">
+          New to this?{" "}
+          <a href="/learn" target="_blank" rel="noopener">
+            Take the three-minute lesson
+          </a>
+          .
+        </p>
         <button className="g-btn-ghost" onClick={onClose}>
           Got it
         </button>
