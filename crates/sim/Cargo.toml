@@ -1,0 +1,17 @@
+[package]
+name = "cubes-sim"
+description = "Self-play simulator and micro benchmarks for cubes: bot ladders, balance data and move generation timing."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[[bin]]
+name = "cubes-sim"
+path = "src/main.rs"
+
+[dependencies]
+cubes-engine = { path = "../engine" }
+serde.workspace = true
+serde_json.workspace = true

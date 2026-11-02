@@ -68,6 +68,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cubes-sim"
+version = "0.1.0"
+dependencies = [
+ "cubes-engine",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cubes-wasm"
 version = "0.1.0"
 dependencies = [
