@@ -8,6 +8,7 @@
 
 #![allow(clippy::needless_range_loop, clippy::too_many_arguments)]
 
+pub mod config;
 pub mod geometry;
-pub mod rng;
 pub mod pieces;
+pub mod rng;
