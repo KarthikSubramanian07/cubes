@@ -63,7 +63,11 @@ impl Engine {
     pub fn check(&self, seat: u32, action_json: &str) -> String {
         let result = serde_json::from_str::<Action>(action_json)
             .map_err(|e| e.to_string())
-            .and_then(|a| self.game.check(seat as usize, &a).map_err(|e| e.to_string()));
+            .and_then(|a| {
+                self.game
+                    .check(seat as usize, &a)
+                    .map_err(|e| e.to_string())
+            });
         match result {
             Ok(()) => r#"{"ok":true}"#.to_string(),
             Err(reason) => serde_json::json!({ "ok": false, "reason": reason }).to_string(),
@@ -81,7 +85,9 @@ impl Engine {
     #[wasm_bindgen(js_name = botAction)]
     pub fn bot_action(&self, seat: u32, level: &str, seed: f64, budget_ms: f64) -> Option<String> {
         let level = Level::parse(level)?;
-        let action = self.game.bot_action(seat as usize, level, seed as u64, budget_ms, &now_ms)?;
+        let action = self
+            .game
+            .bot_action(seat as usize, level, seed as u64, budget_ms, &now_ms)?;
         Some(serde_json::to_string(&action).expect("action serializes"))
     }
 
