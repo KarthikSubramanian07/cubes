@@ -1,0 +1,46 @@
+{
+  "name": "cubes-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "cubes: a territory game of light and corners. Web client.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource-variable/hanken-grotesk": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@fontsource/caveat": "^5.3.0",
+    "@react-three/drei": "10",
+    "@react-three/fiber": "9",
+    "@react-three/postprocessing": "3",
+    "postprocessing": "6",
+    "react": "19",
+    "react-dom": "19",
+    "react-router": "7",
+    "three": "0.187",
+    "zustand": "5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261102.1",
+    "@playwright/test": "^1.64.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.3",
+    "typescript": "7",
+    "vite": "8",
+    "vitest": "5",
+    "wrangler": "4"
+  }
+}
