@@ -551,6 +551,15 @@
   backdrop-filter: blur(10px) saturate(1.2);
   padding: 20px;
 }
+/* The hand-off hides the previous player's fogged view completely: a blur
+   still showed where their light was. */
+.g-overlay.handoff {
+  background: var(--paper);
+  backdrop-filter: none;
+}
+.g-overlay.handoff .g-btn-primary {
+  margin-top: 14px;
+}
 @media (prefers-reduced-motion: no-preference) {
   .g-overlay .g-sheet {
     animation: sheet-in 0.5s var(--ease);
