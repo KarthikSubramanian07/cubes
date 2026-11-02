@@ -1,0 +1,22 @@
+# playcubes-rooms: one Durable Object per room, written in Rust (workers-rs).
+# The Pages project `playcubes` binds ROOMS to this script, so the site and
+# its rooms share an origin. `npx wrangler@4 dev` serves it on :8787.
+name = "playcubes-rooms"
+main = "build/worker/shim.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+[build]
+command = "worker-build --release"
+
+[observability]
+enabled = true
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+# SQLite-backed Durable Objects (available on the free plan).
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
