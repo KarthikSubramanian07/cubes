@@ -1,6 +1,6 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, type JSX } from "react";
-import type { Group } from "three";
+import { Color, type Group } from "three";
 import { OWNER, type View } from "@/engine/types";
 import { cellToWorld, coordsOf, layoutOf } from "./coords";
 import { diffViews } from "./diff";
@@ -18,6 +18,8 @@ import { Ghost } from "./scene/Ghost";
 import { Island } from "./scene/Island";
 import { KeyNudge } from "./scene/KeyNudge";
 import { Overlays } from "./scene/Overlays";
+import { Physics } from "./scene/Physics";
+import type { PhysicsWorld } from "./physics";
 import { Picker } from "./scene/Picker";
 import { Pieces } from "./scene/Pieces";
 import { Post } from "./scene/Post";
@@ -87,7 +89,7 @@ export function BoardScene(props: BoardSceneProps): JSX.Element {
           }
         }}
       >
-        <SceneRoot {...props} q={q} reduced={reduced} shared={shared} rigRef={rig} onSlow={props.quality ? undefined : () => setAutoTier(downgrade)} />
+        <SceneRoot {...props} q={q} tier={tier} reduced={reduced} shared={shared} rigRef={rig} onSlow={props.quality ? undefined : () => setAutoTier(downgrade)} />
       </Canvas>
     </div>
   );
@@ -102,6 +104,7 @@ function releasePointer(shared: SceneShared, id: number): void {
 
 interface SceneRootProps extends BoardSceneProps {
   q: QualitySettings;
+  tier: QualityTier;
   reduced: boolean;
   shared: SceneShared;
   rigRef: React.RefObject<RigApi | null>;
@@ -118,6 +121,9 @@ function SceneRoot(props: SceneRootProps) {
   const clock = useThree((s) => s.clock);
 
   const prev = useRef<View | null>(null);
+  // Real rigid-body debris (Rapier). Off with reduced motion or on the low tier.
+  const physics = useRef<PhysicsWorld | null>(null);
+  const physicsOn = !reduced && props.tier !== "low";
   const diff = useMemo(() => diffViews(prev.current, view), [view]);
 
   const pSpec = useMemo(() => pieceSpec(L.is2D), [L.is2D]);
@@ -149,14 +155,31 @@ function SceneRoot(props: SceneRootProps) {
       if (L.is2D) p[1] = pSpec.centreY;
       return p;
     };
+    const top = L.is2D ? 0.42 : 0.5;
+    const ph = physics.current;
+    // Colliders first, so new debris lands on (or falls through) the new board.
+    ph?.sync(view);
     for (const e of diff.events) {
       switch (e.kind) {
-        case "place":
+        case "place": {
           fx.place(e.cells.map(at), seatColor(e.seat), now, seatGlow(e.seat), 0);
+          // Little chips kicked up where the shard lands.
+          if (ph) {
+            const p = e.cells.map(at).reduce((a, v) => [a[0] + v[0] / e.cells.length, a[1] + v[1] / e.cells.length, a[2] + v[2] / e.cells.length], [0, 0, 0]);
+            ph.burst([p[0], p[1] + top, p[2]], seatColor(e.seat), now + 0.18, { count: L.is2D ? 5 : 7, speed: 2.4, up: 3.2, size: [0.06, 0.13], life: 1.5, glow: 2.4, spin: 14 });
+          }
           break;
-        case "shatter":
-          fx.shatter(at(e.cell), e.victim >= 0 ? seatColor(e.victim) : seatColor(seat), now);
+        }
+        case "shatter": {
+          const c = e.victim >= 0 ? seatColor(e.victim) : seatColor(seat);
+          fx.shatter(at(e.cell), c, now);
+          // The cube breaks into real fragments that bounce and tumble.
+          if (ph) {
+            const p = at(e.cell);
+            ph.burst([p[0], p[1] + top, p[2]], c, now, { count: 18, speed: 4.4, up: 7, size: [0.16, 0.36], life: 3.6, glow: 1.5, spin: 12 });
+          }
           break;
+        }
         case "storm":
           fx.storm(
             e.cells.map((c, i) => ({
@@ -167,9 +190,30 @@ function SceneRoot(props: SceneRootProps) {
             now,
             [0, 0],
           );
+          // The ring breaks loose and tumbles off the island into the void.
+          if (ph) {
+            const ash = new Color(0x2c251d);
+            e.cells.forEach((c, i) => {
+              const [x, , z] = coordsOf(L, c);
+              const owner = e.seats[i] ?? -1;
+              if (owner < 0 && z !== 0) return;
+              const p = at(c);
+              const out = Math.hypot(p[0], p[2]) || 1;
+              const kick: [number, number, number] = [(p[0] / out) * 1.8, 1.2 + Math.random(), (p[2] / out) * 1.8];
+              ph.block(owner >= 0 ? p : [p[0], -0.3, p[2]], owner >= 0 ? seatColor(owner).clone().multiplyScalar(1.1) : ash, now + (x % 3) * 0.06, kick, 3.6, owner >= 0 ? 1 : 0.96);
+            });
+          }
           break;
         case "misfire":
           fx.misfire(e.cells.map(at), now);
+          // A phantom of the shard drops in, hits what was hiding there and bounces off.
+          if (ph) {
+            const red = new Color(1.6, 0.35, 0.25);
+            for (const c of e.cells) {
+              const p = at(c);
+              ph.block([p[0], p[1] + 2.4, p[2]], red, now, [Math.random() - 0.5, -2, Math.random() - 0.5], 1.6, 0.9);
+            }
+          }
           break;
         case "reveal":
           fx.reveal(e.cells.map(at), now);
@@ -181,6 +225,10 @@ function SceneRoot(props: SceneRootProps) {
           fx.remove(e.cells.map(at), e.seats.map((s) => seatColor(s)), now);
           break;
       }
+    }
+    // The winner's colours rain down and pile up on the board.
+    if (ph && before.phase === "playing" && view.phase === "over" && view.winners?.length) {
+      ph.confetti(view.winners.map((w) => seatColor(w)), now + 0.3, L.is2D ? 80 : 110);
     }
   }, [diff, view, fx, clock, L, pSpec, seat]);
 
@@ -217,6 +265,7 @@ function SceneRoot(props: SceneRootProps) {
         {fogOn && <Fog view={view} L={L} layers={q.fogLayers} layerCut={layerCut} />}
         <Ghost ghost={ghost} view={view} L={L} reducedMotion={reduced} />
         <Fx engine={fx} />
+        <Physics view={view} L={L} enabled={physicsOn} worldRef={physics} />
         <Picker view={view} L={L} layerCut={layerCut} shared={shared} onHover={onHover} onSelect={onSelect} />
         <KeyNudge view={view} L={L} seat={seat} layerCut={layerCut} shared={shared} onHover={onHover} />
       </group>

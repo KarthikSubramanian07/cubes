@@ -23,9 +23,9 @@ export interface GameSetup {
 export const AI_LEVELS: readonly AiLevel[] = ["ember", "flare", "nova"];
 
 export const AI_LABELS: Record<AiLevel, { label: string; note: string }> = {
-  ember: { label: "Ember", note: "Plays fast, plays fair, forgets about corners." },
-  flare: { label: "Flare", note: "Thinks a few moves ahead. Annoyingly tidy." },
-  nova: { label: "Nova", note: "Searches the tree. Do not play it when tired." },
+  ember: { label: "Ember", note: "Easy. Makes sensible moves but misses chances." },
+  flare: { label: "Flare", note: "Medium. Thinks a move ahead and blocks you." },
+  nova: { label: "Nova", note: "Hard. Plays out thousands of futures before it moves." },
 };
 
 export const MAX_NAME = 24;

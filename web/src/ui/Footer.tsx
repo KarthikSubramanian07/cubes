@@ -35,7 +35,7 @@ export function Footer() {
             <h2>Project</h2>
             <ul>
               <li><a href="https://github.com/KarthikSubramanian07/cubes" rel="noopener">Source</a></li>
-              <li><Link to="/#built">How it's built</Link></li>
+              <li><Link to="/about">How it's built</Link></li>
               <li><a href="https://github.com/KarthikSubramanian07/cubes/issues" rel="noopener">Report a bug</a></li>
               <li><Link to="/about">About</Link></li>
               <li><Link to="/contact">Contact</Link></li>

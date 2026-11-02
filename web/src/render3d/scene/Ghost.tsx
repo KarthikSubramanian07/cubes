@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
-import { BoxGeometry, Matrix4, type Color, type InstancedMesh, type Vector3 } from "three";
+import { BoxGeometry, Matrix4, Vector3, type Color, type Group, type InstancedMesh } from "three";
 import { OWNER, type View } from "@/engine/types";
 import { cellToWorld, coordsOf, indexOf, TILE_H, type BoardLayout } from "../coords";
 import { ghostMaterial } from "../materials";
@@ -30,6 +30,13 @@ export function Ghost({ ghost, view, L, reducedMotion }: { ghost: BoardGhost | n
 
   const cells = useMemo(() => (ghost ? ghost.cells.slice(0, CAP) : []), [ghost]);
 
+  // The ghost glides between targets on a critically damped spring instead of
+  // snapping: when it moves, keep it where it was and let the offset relax.
+  const glide = useRef<Group>(null);
+  const offset = useRef(new Vector3());
+  const vel = useRef(new Vector3());
+  const lastCentre = useRef<Vector3 | null>(null);
+
   useLayoutEffect(() => {
     const m = mesh.current;
     const pl = plumb.current;
@@ -43,6 +50,23 @@ export function Ghost({ ghost, view, L, reducedMotion }: { ghost: BoardGhost | n
     });
     m.count = cells.length;
     m.instanceMatrix.needsUpdate = true;
+
+    if (cells.length) {
+      const centre = new Vector3();
+      for (const c of cells) {
+        cellToWorld(L, c, p);
+        centre.x += p[0] / cells.length;
+        centre.y += p[1] / cells.length;
+        centre.z += p[2] / cells.length;
+      }
+      const last = lastCentre.current;
+      if (last && !reducedMotion && last.distanceTo(centre) < 8) offset.current.add(last.sub(centre));
+      lastCentre.current = centre;
+    } else {
+      lastCentre.current = null;
+      offset.current.set(0, 0, 0);
+      vel.current.set(0, 0, 0);
+    }
 
     // 3D: drop a plumb line + footprint from each cube to whatever would hold it.
     let k = 0;
@@ -74,10 +98,22 @@ export function Ghost({ ghost, view, L, reducedMotion }: { ghost: BoardGhost | n
       if (ghost && !ghost.valid) shakeT0.current = performance.now() / 1000;
       prevKey.current = key;
     }
-  }, [cells, L, view, key, ghost]);
+  }, [cells, L, view, key, ghost, reducedMotion]);
 
-  useFrame((s) => {
+  useFrame((s, delta) => {
     const t = s.clock.elapsedTime;
+    const g = glide.current;
+    if (g) {
+      const dt = Math.min(delta, 1 / 30);
+      const x = offset.current;
+      const v = vel.current;
+      // k = 420, critically damped: c = 2 * sqrt(k).
+      v.addScaledVector(x, -420 * dt).multiplyScalar(Math.max(0, 1 - 41 * dt));
+      x.addScaledVector(v, dt);
+      if (x.lengthSq() < 1e-6 && v.lengthSq() < 1e-6) x.set(0, 0, 0);
+      const bob = L.is2D || reducedMotion ? 0 : Math.sin(t * 3.1) * 0.035;
+      g.position.set(x.x, x.y + bob, x.z);
+    }
     const color = ghost ? (ghost.valid ? seatColor(ghost.seat) : linear(NIGHT.danger)) : linear(NIGHT.danger);
     for (const material of [mat, plumbMat]) {
       const u = material.uniforms;
@@ -96,7 +132,9 @@ export function Ghost({ ghost, view, L, reducedMotion }: { ghost: BoardGhost | n
 
   return (
     <group visible={!!ghost}>
-      <instancedMesh ref={mesh} args={[geo, mat, CAP]} frustumCulled={false} raycast={noRaycast} renderOrder={30} />
+      <group ref={glide}>
+        <instancedMesh ref={mesh} args={[geo, mat, CAP]} frustumCulled={false} raycast={noRaycast} renderOrder={30} />
+      </group>
       <instancedMesh ref={plumb} args={[plumbGeo, plumbMat, CAP * 2]} frustumCulled={false} raycast={noRaycast} renderOrder={29} />
     </group>
   );
