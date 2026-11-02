@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::bits::{generate, prepare, seat_rows, GenInput, Geo};
+use crate::bits::{generate, kit_mask, prepare, seat_rows, GenInput, Geo};
 use crate::config::{core_cells, node_cells, ConfigError, GameConfig};
 use crate::geometry::Lattice;
 use crate::pieces::Kit;
@@ -456,7 +456,7 @@ impl State {
             fp: &scratch.fp,
             cand: &scratch.cand,
             air: &scratch.air,
-            pieces: &st.pieces,
+            pieces: kit_mask(&st.pieces),
             spark,
             leap,
         };

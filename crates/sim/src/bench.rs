@@ -7,6 +7,17 @@
 
 use std::time::Instant;
 
+extern "C" {
+    fn clock() -> std::os::raw::c_ulong;
+}
+
+/// Process CPU time in seconds (`CLOCKS_PER_SEC` is 1e6 on macOS and on
+/// glibc). Unlike wall time it doesn't count time spent waiting for a busy
+/// machine, so single-thread measurements stay comparable under load.
+pub fn cpu_seconds() -> f64 {
+    unsafe { clock() as f64 / 1_000_000.0 }
+}
+
 use serde::Serialize;
 
 use cubes_engine::game::{Ctx, GenMode, Move, Scratch, State};
@@ -32,6 +43,9 @@ pub struct BenchRow {
     pub all_moves_ns: f64,
     pub has_any_move_ns: f64,
     pub evaluate_ns: f64,
+    /// CPU microseconds per Nova search iteration, and per Flare decision.
+    pub nova_iter_us: f64,
+    pub flare_decision_us: f64,
     /// A whole game with the fixed policy (move generation, commit, end of
     /// turn bookkeeping), in microseconds.
     pub game_us: f64,
@@ -128,17 +142,17 @@ fn time_ns(reps: usize, positions: &[State], mut f: impl FnMut(&State)) -> f64 {
     for st in positions.iter().take(4) {
         f(st);
     }
-    const TRIALS: usize = 9;
+    const TRIALS: usize = 5;
     let per = reps.div_ceil(TRIALS).max(1);
     let mut best = f64::MAX;
     for _ in 0..TRIALS {
-        let t0 = Instant::now();
+        let t0 = cpu_seconds();
         for _ in 0..per {
             for st in positions {
                 f(st);
             }
         }
-        let ns = t0.elapsed().as_secs_f64() * 1e9 / (per * positions.len()) as f64;
+        let ns = (cpu_seconds() - t0) * 1e9 / (per * positions.len()) as f64;
         best = best.min(ns);
     }
     best
@@ -200,7 +214,7 @@ pub fn run(reps: usize) -> Vec<BenchRow> {
             boards[bi % boards.len()].gen_moves(
                 &ctx,
                 seat,
-                &st.seats[seat].pieces,
+                cubes_engine::bits::kit_mask(&st.seats[seat].pieces),
                 GenMode::Normal,
                 &mut scratch,
                 &mut buf,
@@ -219,6 +233,22 @@ pub fn run(reps: usize) -> Vec<BenchRow> {
         let evaluate_ns = time_ns(reps.div_ceil(4), &pos, |st| {
             std::hint::black_box(bot.evaluate(st, st.turn as usize));
         });
+        // Bots: a handful of positions, CPU time.
+        let few: Vec<&State> = pos.iter().step_by((pos.len() / 6).max(1)).take(6).collect();
+        let iters = 200u32;
+        let t0 = cpu_seconds();
+        for (k, st) in few.iter().enumerate() {
+            let mut b = Bot::new(&ctx, Level::Nova, k as u64, 1e12, &now_ms);
+            b.max_iters = Some(iters);
+            std::hint::black_box(b.next_action(st, st.turn as usize));
+        }
+        let nova_iter_us = (cpu_seconds() - t0) * 1e6 / (few.len() as f64 * iters as f64);
+        let t0 = cpu_seconds();
+        for (k, st) in few.iter().enumerate() {
+            let mut b = Bot::new(&ctx, Level::Flare, k as u64, 0.0, &now_ms);
+            std::hint::black_box(b.next_action(st, st.turn as usize));
+        }
+        let flare_decision_us = (cpu_seconds() - t0) * 1e6 / few.len() as f64;
         rows.push(BenchRow {
             name: case.name.to_string(),
             positions: pos.len(),
@@ -230,6 +260,8 @@ pub fn run(reps: usize) -> Vec<BenchRow> {
             all_moves_ns,
             has_any_move_ns,
             evaluate_ns,
+            nova_iter_us,
+            flare_decision_us,
             game_us,
         });
     }
@@ -237,24 +269,26 @@ pub fn run(reps: usize) -> Vec<BenchRow> {
 }
 
 pub fn print_text(rows: &[BenchRow]) {
-    println!("cubes-sim --bench (ns per call unless noted)");
+    println!("cubes-sim --bench (CPU ns per call unless noted)");
     println!(
-        "  {:<26} {:>5} {:>7} {:>11} {:>11} {:>8} {:>11} {:>11} {:>11} {:>11} {:>11}",
+        "  {:<26} {:>4} {:>6} {:>10} {:>10} {:>7} {:>10} {:>10} {:>8} {:>9} {:>10} {:>10} {:>10}",
         "case",
         "pos",
         "moves",
         "gen naive",
-        "gen normal",
+        "gen new",
         "speedup",
         "gen board",
         "all_moves",
         "has_any",
         "evaluate",
-        "game (us)"
+        "nova it us",
+        "flare us",
+        "game us"
     );
     for r in rows {
         println!(
-            "  {:<26} {:>5} {:>7.1} {:>11.0} {:>11.0} {:>7.1}x {:>11.0} {:>11.0} {:>11.0} {:>11.0} {:>11.0}",
+            "  {:<26} {:>4} {:>6.1} {:>10.0} {:>10.0} {:>6.1}x {:>10.0} {:>10.0} {:>8.0} {:>9.0} {:>10.1} {:>10.0} {:>10.0}",
             r.name,
             r.positions,
             r.avg_moves,
@@ -265,6 +299,8 @@ pub fn print_text(rows: &[BenchRow]) {
             r.all_moves_ns,
             r.has_any_move_ns,
             r.evaluate_ns,
+            r.nova_iter_us,
+            r.flare_decision_us,
             r.game_us
         );
     }

@@ -530,6 +530,51 @@ impl Geo {
     }
 }
 
+/// The window status around one anchor, for repeated single-shard probes.
+#[derive(Clone, Copy, Debug)]
+pub struct AnchorWin {
+    pub cell: usize,
+    win: u128,
+    awin: u128,
+    c_air: bool,
+    /// Open face neighbours; zero means no shard of two or more cells fits.
+    pub open: usize,
+}
+
+impl Geo {
+    /// The first legal placement of `piece` through the anchor, scanning
+    /// its entries from `start` (mod length). Playouts use this to pick a
+    /// random fitting placement without enumerating them all.
+    #[inline]
+    pub fn first_fit(&self, aw: &AnchorWin, piece: usize, start: u32) -> Option<u32> {
+        let i = aw.cell * self.pieces + piece;
+        let gs = self.subsets + 1;
+        let base = self.ent_off[i] as usize;
+        let grp = &self.grp_off[i * gs..(i + 1) * gs];
+        let (a, b) = (base + grp[1] as usize, base + grp[self.subsets] as usize);
+        let len = b - a;
+        if len == 0 {
+            return None;
+        }
+        let s0 = start as usize % len;
+        for k in 0..len {
+            let mut e = a + s0 + k;
+            if e >= b {
+                e -= len;
+            }
+            if self.ent_mask[e] & aw.win != 0 {
+                continue;
+            }
+            if self.gravity && (self.ent_need[e] & aw.awin != 0 || (aw.c_air && self.ent_cneed[e]))
+            {
+                continue;
+            }
+            return Some(self.ent_pid[e]);
+        }
+        None
+    }
+}
+
 /// Inputs shared by every move-generation call.
 pub struct GenInput<'a> {
     /// Padded forbidden rows of the seat.
@@ -538,9 +583,19 @@ pub struct GenInput<'a> {
     pub cand: &'a [u64],
     /// Gravity only: padded rows of cells with nothing solid below them.
     pub air: &'a [u64],
-    pub pieces: &'a [bool],
+    /// Kit shards still available, as a bit mask over piece indices.
+    pub pieces: u32,
     pub spark: bool,
     pub leap: bool,
+}
+
+/// Kit availability as a bit mask.
+pub fn kit_mask(pieces: &[bool]) -> u32 {
+    pieces
+        .iter()
+        .enumerate()
+        .filter(|(_, &p)| p)
+        .fold(0, |m, (i, _)| m | 1 << i)
 }
 
 /// Generate every placement that covers a candidate anchor and whose window
@@ -553,84 +608,104 @@ pub fn generate(
     out: &mut Vec<Move>,
     first_only: bool,
 ) -> bool {
+    let mut found = false;
+    ctx.geo.for_each_cell(inp.cand, |c| {
+        let before = out.len();
+        let stop = anchor_moves::<true>(ctx, inp, c, stamp, epoch, out, first_only);
+        found |= out.len() > before;
+        !stop
+    });
+    found
+}
+
+/// Placements through the single anchor `c` (assumed clear). Returns true
+/// when `first_only` is set and a move was found. With `DEDUPE`, placements
+/// already stamped with `epoch` are skipped (they were found from another
+/// anchor in the same call).
+#[inline]
+pub(crate) fn anchor_moves<const DEDUPE: bool>(
+    ctx: &Ctx,
+    inp: &GenInput,
+    c: usize,
+    stamp: &mut [u32],
+    epoch: u32,
+    out: &mut Vec<Move>,
+    first_only: bool,
+) -> bool {
     let geo = &ctx.geo;
     let spark_index = ctx.kit.spark_index;
     let gravity = geo.gravity;
-    let mut found = false;
-    geo.for_each_cell(inp.cand, |c| {
-        let c_air = gravity && geo.pad_test(inp.air, c);
-        if inp.spark {
-            // A spark covers only `c`, a clear candidate.
-            if !c_air {
-                let (pids, _) = geo.entries(c, spark_index);
-                out.push(Move {
-                    pid: pids[0],
-                    leap: inp.leap,
-                });
-                found = true;
-                return !first_only;
-            }
-            return true;
+    let c_air = gravity && geo.pad_test(inp.air, c);
+    if inp.spark {
+        // A spark covers only `c`, a clear candidate.
+        if !c_air {
+            let (pids, _) = geo.entries(c, spark_index);
+            out.push(Move {
+                pid: pids[0],
+                leap: inp.leap,
+            });
+            return first_only;
         }
-        let win = geo.window(inp.fp, c);
-        let awin = if gravity { geo.window(inp.air, c) } else { 0 };
-        // Face neighbours of the anchor that are still open. Every shard of
-        // two or more cells covers at least one, so only non-empty subsets
-        // of `open` can hold legal placements.
-        let mut open = 0usize;
-        for (i, &b) in geo.face_bits.iter().enumerate() {
-            if win >> b & 1 == 0 {
-                open |= 1 << i;
-            }
+        return false;
+    }
+    let win = geo.window(inp.fp, c);
+    let awin = if gravity { geo.window(inp.air, c) } else { 0 };
+    // Face neighbours of the anchor that are still open. Every shard of
+    // two or more cells covers at least one, so only non-empty subsets of
+    // `open` can hold legal placements.
+    let mut open = 0usize;
+    for (i, &b) in geo.face_bits.iter().enumerate() {
+        if win >> b & 1 == 0 {
+            open |= 1 << i;
         }
-        if open == 0 {
-            return true;
-        }
-        let gs = geo.subsets + 1;
-        for piece in 0..spark_index {
-            if !inp.pieces[piece] {
-                continue;
-            }
-            let i = c * geo.pieces + piece;
-            let start = geo.ent_off[i] as usize;
-            let grp = &geo.grp_off[i * gs..(i + 1) * gs];
-            // All neighbours open: the whole list (minus the empty subset)
-            // is one contiguous range.
-            let all = open == geo.subsets - 1;
-            let mut sub = open;
-            while sub != 0 {
-                let (a, b) = if all {
-                    (start + grp[1] as usize, start + grp[geo.subsets] as usize)
-                } else {
-                    (start + grp[sub] as usize, start + grp[sub + 1] as usize)
-                };
-                sub = if all { 0 } else { (sub - 1) & open };
-                for k in a..b {
-                    if geo.ent_mask[k] & win != 0 {
-                        continue;
-                    }
-                    if gravity && (geo.ent_need[k] & awin != 0 || (c_air && geo.ent_cneed[k])) {
-                        continue;
-                    }
-                    let pid = geo.ent_pid[k] as usize;
+    }
+    if open == 0 {
+        return false;
+    }
+    let gs = geo.subsets + 1;
+    // All neighbours open: the whole list (minus the empty subset) is one
+    // contiguous range.
+    let all = open == geo.subsets - 1;
+    let mut pieces = inp.pieces & ((1u32 << spark_index) - 1);
+    while pieces != 0 {
+        let piece = pieces.trailing_zeros() as usize;
+        pieces &= pieces - 1;
+        let i = c * geo.pieces + piece;
+        let start = geo.ent_off[i] as usize;
+        let grp = &geo.grp_off[i * gs..(i + 1) * gs];
+        let mut sub = open;
+        while sub != 0 {
+            let (a, b) = if all {
+                (start + grp[1] as usize, start + grp[geo.subsets] as usize)
+            } else {
+                (start + grp[sub] as usize, start + grp[sub + 1] as usize)
+            };
+            sub = if all { 0 } else { (sub - 1) & open };
+            for k in a..b {
+                if geo.ent_mask[k] & win != 0 {
+                    continue;
+                }
+                if gravity && (geo.ent_need[k] & awin != 0 || (c_air && geo.ent_cneed[k])) {
+                    continue;
+                }
+                let pid = geo.ent_pid[k] as usize;
+                if DEDUPE {
                     if stamp[pid] == epoch {
                         continue;
                     }
                     stamp[pid] = epoch;
-                    out.push(Move {
-                        pid: pid as u32,
-                        leap: inp.leap,
-                    });
-                    found = true;
-                    if first_only {
-                        return false;
-                    }
+                }
+                out.push(Move {
+                    pid: pid as u32,
+                    leap: inp.leap,
+                });
+                if first_only {
+                    return true;
                 }
             }
         }
-        true
-    });
-    found
+    }
+    false
 }
 
 /// Per-seat bitboards computed from scratch for one generation call: own
@@ -782,6 +857,18 @@ impl Board {
         b
     }
 
+    /// Become a copy of `o`, reusing allocations.
+    pub fn copy_from(&mut self, o: &Board) {
+        self.seats = o.seats;
+        self.rows = o.rows;
+        self.prows = o.prows;
+        self.own.clone_from(&o.own);
+        self.occ.clone_from(&o.occ);
+        self.fp.clone_from(&o.fp);
+        self.attach.clone_from(&o.attach);
+        self.air.clone_from(&o.air);
+    }
+
     #[inline]
     pub fn own(&self, seat: usize) -> &[u64] {
         &self.own[seat * self.rows..(seat + 1) * self.rows]
@@ -860,7 +947,7 @@ impl Board {
         &self,
         ctx: &Ctx,
         seat: usize,
-        pieces: &[bool],
+        pieces: u32,
         mode: GenMode,
         sc: &mut Scratch,
         out: &mut Vec<Move>,
@@ -868,7 +955,7 @@ impl Board {
     ) -> bool {
         let spark = matches!(mode, GenMode::Spark | GenMode::SparkLeap);
         let leap = matches!(mode, GenMode::Leap | GenMode::SparkLeap);
-        if !spark && !pieces.iter().any(|p| *p) {
+        if !spark && pieces == 0 {
             return false;
         }
         sc.prepare(ctx);
@@ -903,6 +990,59 @@ impl Board {
             leap,
         };
         generate(ctx, &inp, &mut sc.stamp, sc.epoch, out, first_only)
+    }
+
+    /// Kit placements through one attach point (no surges). Used by
+    /// playouts, which sample anchors instead of enumerating every move.
+    pub fn moves_at(&self, ctx: &Ctx, seat: usize, cell: usize, pieces: u32, out: &mut Vec<Move>) {
+        let inp = GenInput {
+            fp: self.fp(seat),
+            cand: &[],
+            air: &self.air,
+            pieces,
+            spark: false,
+            leap: false,
+        };
+        anchor_moves::<false>(ctx, &inp, cell, &mut [], 0, out, false);
+    }
+
+    /// Window status around attach point `cell` for `seat`.
+    pub fn anchor_win(&self, ctx: &Ctx, seat: usize, cell: usize) -> AnchorWin {
+        let geo = &ctx.geo;
+        let win = geo.window(self.fp(seat), cell);
+        let gravity = geo.gravity;
+        let awin = if gravity {
+            geo.window(&self.air, cell)
+        } else {
+            0
+        };
+        let c_air = gravity && geo.pad_test(&self.air, cell);
+        let mut open = 0usize;
+        for (i, &b) in geo.face_bits.iter().enumerate() {
+            if win >> b & 1 == 0 {
+                open |= 1 << i;
+            }
+        }
+        AnchorWin {
+            cell,
+            win,
+            awin,
+            c_air,
+            open,
+        }
+    }
+
+    /// Is `cell` a legal spot for a Spark (clear, and supported under
+    /// gravity)? The caller passes an attach point.
+    #[inline]
+    pub fn spark_ok(&self, ctx: &Ctx, cell: usize) -> bool {
+        self.air.is_empty() || !ctx.geo.pad_test(&self.air, cell)
+    }
+
+    /// The spark placement id at `cell`.
+    #[inline]
+    pub fn spark_pid(ctx: &Ctx, cell: usize) -> u32 {
+        ctx.geo.entries(cell, ctx.kit.spark_index).0[0]
     }
 }
 
@@ -979,7 +1119,15 @@ mod tests {
                 assert_eq!(d.len(), n.min(1), "{tag}: first_only {mode:?}");
                 if ctx.config.arena || mode == GenMode::Normal {
                     let mut c = Vec::new();
-                    board.gen_moves(ctx, seat, &rich.seats[seat].pieces, mode, sc, &mut c, false);
+                    board.gen_moves(
+                        ctx,
+                        seat,
+                        kit_mask(&rich.seats[seat].pieces),
+                        mode,
+                        sc,
+                        &mut c,
+                        false,
+                    );
                     assert_eq!(sorted(c), sorted(d_all(ctx, &rich, seat, mode, sc)));
                 }
             }

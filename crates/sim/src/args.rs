@@ -1,6 +1,6 @@
 //! Command-line parsing. Hand-rolled to keep the workspace dependency-light.
 
-use cubes_engine::{GameConfig, Level};
+use cubes_engine::{GameConfig, Level, Weights};
 
 #[derive(Clone, Debug)]
 pub struct Args {
@@ -8,6 +8,8 @@ pub struct Args {
     pub seats: u8,
     pub games: usize,
     pub bots: Vec<Level>,
+    /// Weight overrides per bot index (JSON merged over the defaults).
+    pub weights: Vec<Option<serde_json::Value>>,
     pub budget_ms: f64,
     pub iters: Option<u32>,
     pub threads: usize,
@@ -26,7 +28,7 @@ cubes-sim: self-play for balance tuning and bot ladders
 USAGE:
   cubes-sim [--preset duel] [--seats 2] [--games 400] [--bots flare,ember]
             [--budget 50] [--iters N] [--threads 8] [--seed 1] [--json]
-            [--patch '{\"nodes\":8}'] [--no-timing]
+            [--patch '{\"nodes\":8}'] [--w0 '{\"attach\":1.2}'] [--no-timing]
   cubes-sim --bench [--reps 200] [--json]
 
 OPTIONS:
@@ -42,6 +44,9 @@ OPTIONS:
   --threads N     worker threads (default: all cores)
   --seed S        base seed; game i uses seed S + i
   --patch JSON    merge these fields over the preset's GameConfig
+  --weights JSON  merge these fields over every bot's default Weights
+  --w0..--w3 JSON weight overrides for the bot at that index in --bots
+                  (so --bots flare,flare --w1 '{...}' is an A/B test)
   --no-timing     skip the per-move movegen timing sample (faster)
   --json          print the report as JSON
   --bench         run the move generation micro benchmark suite
@@ -54,6 +59,7 @@ pub fn parse(raw: &[String]) -> Result<Args, String> {
         seats: 0,
         games: 100,
         bots: vec![Level::Flare, Level::Ember],
+        weights: vec![None; 4],
         budget_ms: 50.0,
         iters: None,
         threads: std::thread::available_parallelism()
@@ -132,6 +138,20 @@ pub fn parse(raw: &[String]) -> Result<Args, String> {
                     Some(serde_json::from_str(&v).map_err(|e| format!("--patch: bad JSON: {e}"))?);
                 i += 1;
             }
+            "--weights" | "--w0" | "--w1" | "--w2" | "--w3" => {
+                let v = need(i, flag)?;
+                let json: serde_json::Value =
+                    serde_json::from_str(&v).map_err(|e| format!("{flag}: bad JSON: {e}"))?;
+                if flag == "--weights" {
+                    for w in a.weights.iter_mut() {
+                        *w = Some(merge(w.take(), &json));
+                    }
+                } else {
+                    let k = flag[3..].parse::<usize>().unwrap();
+                    a.weights[k] = Some(merge(a.weights[k].take(), &json));
+                }
+                i += 1;
+            }
             "--json" => a.json = true,
             "--bench" => a.bench = true,
             "--no-timing" => a.timing = false,
@@ -171,4 +191,33 @@ pub fn config(a: &Args) -> Result<GameConfig, String> {
     let cfg: GameConfig = serde_json::from_value(v).map_err(|e| format!("--patch: {e}"))?;
     cfg.validate().map_err(|e| format!("--patch: {e}"))?;
     Ok(cfg)
+}
+
+fn merge(base: Option<serde_json::Value>, over: &serde_json::Value) -> serde_json::Value {
+    let mut v = base.unwrap_or_else(|| serde_json::json!({}));
+    if let (Some(obj), Some(o)) = (v.as_object_mut(), over.as_object()) {
+        for (k, val) in o {
+            obj.insert(k.clone(), val.clone());
+        }
+    }
+    v
+}
+
+/// The effective weights for bot index `k`.
+pub fn weights_for(a: &Args, k: usize) -> Result<Option<Weights>, String> {
+    let Some(over) = a.weights.get(k).cloned().flatten() else {
+        return Ok(None);
+    };
+    let mut v = serde_json::to_value(Weights::default()).map_err(|e| e.to_string())?;
+    if let (Some(obj), Some(o)) = (v.as_object_mut(), over.as_object()) {
+        for (key, val) in o {
+            if !obj.contains_key(key) {
+                return Err(format!("unknown weight {key}"));
+            }
+            obj.insert(key.clone(), val.clone());
+        }
+    }
+    serde_json::from_value(v)
+        .map(Some)
+        .map_err(|e| format!("bad weights: {e}"))
 }

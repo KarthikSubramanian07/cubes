@@ -665,28 +665,37 @@ impl Game {
         budget_ms: f64,
         clock: &dyn Fn() -> f64,
     ) -> Option<Action> {
+        self.bot_action_with(seat, level, seed, budget_ms, clock, &Default::default())
+    }
+
+    /// [`Game::bot_action`] with extra options (iteration cap, weights).
+    pub fn bot_action_with(
+        &self,
+        seat: usize,
+        level: crate::ai::Level,
+        seed: u64,
+        budget_ms: f64,
+        clock: &dyn Fn() -> f64,
+        opts: &crate::ai::BotOptions,
+    ) -> Option<Action> {
+        use crate::ai::Bot;
         if self.fogged() {
             let belief = Game::from_view(&self.view(Some(seat))).ok()?;
-            let mut bot = crate::ai::Bot::new(&belief.ctx, level, seed, budget_ms, clock);
+            let mut bot = Bot::new(&belief.ctx, level, seed, budget_ms, clock).with_options(opts);
             bot.can_scan = self.data.config.arena;
             bot.scanning = self.scanning(seat);
             let action = bot.next_action(belief.state(), seat)?;
             // A belief-based shatter must target something we can see.
             if let Action::Shatter { cell } = action {
                 if self.check(seat, &Action::Shatter { cell }).is_err() {
-                    let mut bot = crate::ai::Bot::new(
-                        &belief.ctx,
-                        crate::ai::Level::Ember,
-                        seed,
-                        budget_ms,
-                        clock,
-                    );
+                    let mut bot =
+                        Bot::new(&belief.ctx, crate::ai::Level::Ember, seed, budget_ms, clock);
                     return bot.next_action(belief.state(), seat);
                 }
             }
             Some(action)
         } else {
-            let mut bot = crate::ai::Bot::new(&self.ctx, level, seed, budget_ms, clock);
+            let mut bot = Bot::new(&self.ctx, level, seed, budget_ms, clock).with_options(opts);
             bot.next_action(self.state(), seat)
         }
     }

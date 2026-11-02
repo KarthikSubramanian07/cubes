@@ -3,15 +3,15 @@
 use std::time::Instant;
 
 use cubes_engine::game::{is_seat, Scratch, F_CORE, SWEEP_BONUS};
-use cubes_engine::{Action, Event, Game, GameConfig, Level, Phase};
+use cubes_engine::{Action, BotOptions, Event, Game, GameConfig, Phase};
 
 use crate::args::Args;
 
 /// Everything the report needs from one finished game.
 #[derive(Clone, Debug, Default)]
 pub struct GameRecord {
-    /// Bot level per seat.
-    pub levels: Vec<Level>,
+    /// Bot index (into `--bots`) per seat.
+    pub bots: Vec<usize>,
     pub scores: Vec<i32>,
     pub winners: Vec<u8>,
     pub plies: u32,
@@ -26,8 +26,8 @@ pub struct GameRecord {
     pub crowns_decided: bool,
     pub illegal: u32,
     pub movegen_us: Vec<f64>,
-    /// (level, microseconds) for every bot decision.
-    pub decisions: Vec<(Level, f64)>,
+    /// (bot index, microseconds) for every bot decision.
+    pub decisions: Vec<(usize, f64)>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -54,18 +54,24 @@ pub fn now_ms() -> f64 {
 
 /// Bot level for each seat in game `g`: seats cycle through the list and the
 /// assignment rotates one step every game.
-pub fn levels_for(args: &Args, seats: usize, g: usize) -> Vec<Level> {
+pub fn bots_for(args: &Args, seats: usize, g: usize) -> Vec<usize> {
     let k = args.bots.len();
-    (0..seats).map(|s| args.bots[(s + g) % k]).collect()
+    (0..seats).map(|s| (s + g) % k).collect()
 }
 
 pub fn play(args: &Args, cfg: &GameConfig, g: usize) -> GameRecord {
     let seed = args.seed.wrapping_add(g as u64);
     let mut game = Game::new(cfg.clone(), seed).expect("valid config");
     let seats = cfg.seats as usize;
-    let levels = levels_for(args, seats, g);
+    let bots = bots_for(args, seats, g);
+    let opts: Vec<BotOptions> = (0..args.bots.len())
+        .map(|k| BotOptions {
+            max_iters: args.iters,
+            weights: crate::args::weights_for(args, k).expect("weights validated"),
+        })
+        .collect();
     let mut rec = GameRecord {
-        levels: levels.clone(),
+        bots: bots.clone(),
         seats: vec![SeatRecord::default(); seats],
         ..Default::default()
     };
@@ -96,9 +102,9 @@ pub fn play(args: &Args, cfg: &GameConfig, g: usize) -> GameRecord {
             .wrapping_add(calls)
             .wrapping_add(seat as u64 * 7919);
         let t0 = Instant::now();
-        let action = bot_action(&game, seat, levels[seat], bot_seed, budget, args.iters);
-        rec.decisions
-            .push((levels[seat], t0.elapsed().as_secs_f64() * 1e6));
+        let b = bots[seat];
+        let action = game.bot_action_with(seat, args.bots[b], bot_seed, budget, &now_ms, &opts[b]);
+        rec.decisions.push((b, t0.elapsed().as_secs_f64() * 1e6));
         let action = action.unwrap_or(Action::Resign);
         let events = match game.apply(seat, action) {
             Ok(ev) => ev,
@@ -156,17 +162,6 @@ pub fn play(args: &Args, cfg: &GameConfig, g: usize) -> GameRecord {
         rec.crowns_decided = st.winners(&game.ctx, &base) != rec.winners;
     }
     rec
-}
-
-fn bot_action(
-    game: &Game,
-    seat: usize,
-    level: Level,
-    seed: u64,
-    budget: f64,
-    _iters: Option<u32>,
-) -> Option<Action> {
-    game.bot_action(seat, level, seed, budget, &now_ms)
 }
 
 fn record_event(rec: &mut GameRecord, game: &Game, e: &Event) {

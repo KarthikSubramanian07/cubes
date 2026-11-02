@@ -44,6 +44,12 @@ fn main() {
             std::process::exit(2);
         }
     };
+    for k in 0..args.bots.len() {
+        if let Err(e) = args::weights_for(&args, k) {
+            eprintln!("error: {e}");
+            std::process::exit(2);
+        }
+    }
     let started = Instant::now();
     let next = AtomicUsize::new(0);
     let done = AtomicUsize::new(0);

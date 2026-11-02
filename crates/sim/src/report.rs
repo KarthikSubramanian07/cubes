@@ -81,6 +81,8 @@ impl Timing {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BotRow {
+    pub index: usize,
+    pub label: String,
     pub level: Level,
     pub seats_per_game: f64,
     /// Share of wins (ties split), per game.
@@ -138,7 +140,7 @@ pub struct Report {
     pub crowns: CrownStats,
     pub illegal_actions: u32,
     pub movegen_us: Timing,
-    pub decision_us: Vec<(Level, Timing)>,
+    pub decision_us: Vec<(String, Timing)>,
 }
 
 #[derive(Clone, Debug, Default, Serialize)]
@@ -184,20 +186,14 @@ pub fn build(args: &Args, cfg: &GameConfig, recs: &[GameRecord], wall_seconds: f
     let seats = cfg.seats as usize;
     let games = recs.len().max(1) as f64;
     let seat_games = games * seats as f64;
-    let mut distinct: Vec<Level> = Vec::new();
-    for l in &args.bots {
-        if !distinct.contains(l) {
-            distinct.push(*l);
-        }
-    }
-    let by_bot = distinct
-        .iter()
-        .map(|&level| {
+    let labels = labels(&args.bots);
+    let by_bot = (0..args.bots.len())
+        .map(|k| {
             let mut shares = Vec::new();
             let mut scores = Vec::new();
             let mut seat_count = 0usize;
             for r in recs.iter() {
-                let mine: Vec<usize> = (0..seats).filter(|&s| r.levels[s] == level).collect();
+                let mine: Vec<usize> = (0..seats).filter(|&s| r.bots[s] == k).collect();
                 seat_count += mine.len();
                 shares.push(mine.iter().map(|&s| share(r, s)).sum());
                 for &s in &mine {
@@ -206,7 +202,9 @@ pub fn build(args: &Args, cfg: &GameConfig, recs: &[GameRecord], wall_seconds: f
             }
             let per_game = seat_count as f64 / games;
             BotRow {
-                level,
+                index: k,
+                label: labels[k].clone(),
+                level: args.bots[k],
                 seats_per_game: per_game,
                 win_share: Est::of(&shares),
                 expected_share: per_game / seats as f64,
@@ -276,14 +274,13 @@ pub fn build(args: &Args, cfg: &GameConfig, recs: &[GameRecord], wall_seconds: f
         .iter()
         .flat_map(|r| r.movegen_us.iter().copied())
         .collect();
-    let decision_us = distinct
-        .iter()
-        .map(|&l| {
+    let decision_us = (0..args.bots.len())
+        .map(|k| {
             let mut xs: Vec<f64> = recs
                 .iter()
-                .flat_map(|r| r.decisions.iter().filter(|d| d.0 == l).map(|d| d.1))
+                .flat_map(|r| r.decisions.iter().filter(|d| d.0 == k).map(|d| d.1))
                 .collect();
-            (l, Timing::of(&mut xs))
+            (labels[k].clone(), Timing::of(&mut xs))
         })
         .collect();
     Report {
@@ -348,6 +345,20 @@ fn early(r: &GameRecord, s: usize) -> bool {
     r.seats[s].dark_round.is_some() && r.seats[s].pieces_left * 2 >= kit.max(1)
 }
 
+/// Bot labels: the level name, with `#index` when a level appears twice.
+fn labels(bots: &[Level]) -> Vec<String> {
+    bots.iter()
+        .enumerate()
+        .map(|(i, &l)| {
+            if bots.iter().filter(|&&b| b == l).count() > 1 {
+                format!("{}#{i}", level_name(l))
+            } else {
+                level_name(l).to_string()
+            }
+        })
+        .collect()
+}
+
 fn level_name(l: Level) -> &'static str {
     match l {
         Level::Ember => "ember",
@@ -372,8 +383,8 @@ pub fn print_text(r: &Report) {
     println!("WIN SHARE BY BOT (ties split, 95% CI)");
     for b in &r.by_bot {
         println!(
-            "  {:<6} {}   fair {:4.1}%   seats/game {:.1}   avg score {}",
-            level_name(b.level),
+            "  {:<8} {}   fair {:4.1}%   seats/game {:.1}   avg score {}",
+            b.label,
             b.win_share.pct(),
             b.expected_share * 100.0,
             b.seats_per_game,
@@ -460,11 +471,8 @@ pub fn print_text(r: &Report) {
     }
     for (l, t) in &r.decision_us {
         println!(
-            "        {:<6} decision      mean {:8.1} us  p95 {:8.1} us  ({} samples)",
-            level_name(*l),
-            t.mean,
-            t.p95,
-            t.n
+            "        {:<8} decision    mean {:8.1} us  p95 {:8.1} us  ({} samples)",
+            l, t.mean, t.p95, t.n
         );
     }
 }
