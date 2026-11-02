@@ -13,9 +13,18 @@ import { ShardIcon } from "./ui/ShardIcon";
 import "./game.css";
 
 const PaperBoard = lazy(() => import("@/render2d").then((m) => ({ default: m.PaperBoard })));
+const NightBoard = lazy(() =>
+  import("@/render3d").then((m) => ({ default: m.BoardScene as unknown as ComponentType<BoardSceneProps> })),
+);
 
-/** Renderers registered at runtime so the 3D renderer can be added without touching this file. */
-export const NIGHT_RENDERER: { component: ComponentType<BoardSceneProps> | null } = { component: null };
+const BOARD_PREF = "cubes:board:v1";
+function storedBoard(): "paper" | "night" {
+  try {
+    return localStorage.getItem(BOARD_PREF) === "paper" ? "paper" : "night";
+  } catch {
+    return "night";
+  }
+}
 
 export const SEAT_COLORS = ["#e2683c", "#2a9d8f", "#e9b949", "#7c6cf2"];
 
@@ -105,8 +114,18 @@ interface Toast {
 }
 
 export function GameScreen(props: GameScreenProps) {
-  const { view, kit, seat, canAct } = props;
-  const [renderer, setRenderer] = useState<"paper" | "night">(() => (NIGHT_RENDERER.component ? "night" : "paper"));
+  const { view, kit, canAct } = props;
+  // The perspective may be a bot's (watching a bots-only game); "you" is only a human seat.
+  const seat = props.seat !== null && props.seats[props.seat]?.kind === "human" ? props.seat : null;
+  const [renderer, setRendererState] = useState<"paper" | "night">(storedBoard);
+  const setRenderer = (r: "paper" | "night") => {
+    setRendererState(r);
+    try {
+      localStorage.setItem(BOARD_PREF, r);
+    } catch {
+      /* private mode */
+    }
+  };
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [help, setHelp] = useState(false);
@@ -117,7 +136,7 @@ export function GameScreen(props: GameScreenProps) {
   const reduced = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const ctl = useController(
-    { view, kit, seat, canAct, legal: props.legal, submit: props.submit },
+    { view, kit, seat, canAct: canAct && seat !== null, legal: props.legal, submit: props.submit },
     {
       onError: (reason) => {
         setError(reason);
@@ -173,8 +192,9 @@ export function GameScreen(props: GameScreenProps) {
   }, [view]);
   const misfire = useMemo(() => view.events.flatMap((e) => (e.type === "misfire" ? e.cells : [])), [view]);
 
-  const Board = renderer === "night" && NIGHT_RENDERER.component ? NIGHT_RENDERER.component : PaperBoard;
-  const effectiveRenderer = Board === PaperBoard ? "paper" : "night";
+  // 3D boards only exist in the Night renderer.
+  const effectiveRenderer = three ? "night" : renderer;
+  const Board = effectiveRenderer === "night" ? NightBoard : PaperBoard;
 
   const myView = seat !== null ? view.seats[seat] : null;
   const charge = myView?.charge ?? 0;
@@ -200,23 +220,23 @@ export function GameScreen(props: GameScreenProps) {
 
   return (
     <div className={`game ${effectiveRenderer}`} data-phase={view.phase}>
-      <header className="game-top">
-        <button className="game-leave" onClick={props.onLeave} aria-label="Leave game">
+      <header className="g-game-top">
+        <button className="g-game-leave" onClick={props.onLeave} aria-label="Leave game">
           <span aria-hidden>←</span> cubes
         </button>
-        <div className="game-title">
-          <span className="eyebrow">{props.title}</span>
-          {props.roomCode && <span className="room-code">room {props.roomCode}</span>}
-          <span className="round">round {view.round}</span>
+        <div className="g-game-title">
+          <span className="g-eyebrow">{props.title}</span>
+          {props.roomCode && <span className="g-room-code">room {props.roomCode}</span>}
+          <span className="g-round">round {view.round}</span>
           {view.nextStorm !== null && view.config.storm && (
-            <span className="storm-chip" title="The outer ring collapses into ash">
+            <span className="g-storm-chip" title="The outer ring collapses into ash">
               storm in {Math.max(0, view.nextStorm - view.round)}
             </span>
           )}
         </div>
-        <div className="game-tools">
-          {!three && NIGHT_RENDERER.component && (
-            <div className="seg" role="group" aria-label="Board style">
+        <div className="g-game-tools">
+          {!three && (
+            <div className="g-seg" role="group" aria-label="Board style">
               <button aria-pressed={effectiveRenderer === "night"} onClick={() => setRenderer("night")}>
                 night
               </button>
@@ -225,54 +245,55 @@ export function GameScreen(props: GameScreenProps) {
               </button>
             </div>
           )}
-          <button className="icon-btn" onClick={() => setHelp(true)} aria-label="Controls and rules">
+          <button className="g-icon-btn" onClick={() => setHelp(true)} aria-label="Controls and rules">
             ?
           </button>
         </div>
       </header>
 
-      <ol className="seats" aria-label="Players">
+      <ol className="g-seats" aria-label="Players">
         {view.seats.map((s) => {
           const info = props.seats[s.seat];
           const active = view.turn === s.seat && !over;
           return (
             <li
               key={s.seat}
-              className={`seat ${active ? "active" : ""} ${s.dark ? "dark" : ""} ${s.seat === seat ? "me" : ""}`}
+              className={`g-seat ${active ? "active" : ""} ${s.dark ? "dark" : ""} ${s.seat === seat ? "me" : ""}`}
               style={{ "--c": color(s.seat) } as React.CSSProperties}
             >
-              <span className="seat-dot" aria-hidden />
-              <span className="seat-name">
+              <span className="g-seat-dot" aria-hidden />
+              <span className="g-seat-name">
                 {seatName(props, s.seat)}
                 {s.seat === seat && !/^you$/i.test(seatName(props, s.seat)) && <em> (you)</em>}
-                {info?.kind === "bot" && <small className="bot-tag">bot</small>}
-                {info?.autopilot && <small className="bot-tag">autopilot</small>}
-                {info?.connected === false && <small className="away">away</small>}
+                {info?.kind === "bot" && <small className="g-bot-tag">bot</small>}
+                {info?.autopilot && <small className="g-bot-tag">autopilot</small>}
+                {info?.connected === false && <small className="g-away">away</small>}
               </span>
-              <span className="seat-score" aria-label="score">
+              <span className="g-seat-score" aria-label="score">
                 {s.score ?? "?"}
               </span>
               {arena && (
-                <span className="seat-charge" aria-label={`charge ${s.charge ?? "unknown"}`}>
+                <span className="g-seat-charge" aria-label={`charge ${s.charge ?? "unknown"}`}>
                   {s.charge === null ? "⚡?" : `⚡${s.charge}`}
                 </span>
               )}
-              <span className="seat-left" title="Shards left">
+              <span className="g-seat-left" title="Shards left">
                 {s.piecesLeft} left
               </span>
-              {props.thinking === s.seat && <span className="thinking" aria-label="thinking" />}
+              {props.thinking === s.seat && <span className="g-thinking" aria-label="thinking" />}
               {active && clockLeft !== null && props.clock?.seat === s.seat && (
-                <span className={`clock ${clockLeft <= 5 ? "urgent" : ""}`}>{clockLeft}s</span>
+                <span className={`g-clock ${clockLeft <= 5 ? "urgent" : ""}`}>{clockLeft}s</span>
               )}
             </li>
           );
         })}
       </ol>
 
-      <main className="board-wrap" onContextMenu={(e) => e.preventDefault()} onWheel={(e) => {
+      <main className="g-board-wrap" onContextMenu={(e) => e.preventDefault()} onWheel={(e) => {
+        // In 3D the wheel zooms the camera; on paper it turns the shard.
         if (effectiveRenderer === "paper" && ctl.piece !== null) ctl.transform(e.deltaY > 0 ? "rotate" : "rotateBack");
       }}>
-        <Suspense fallback={<div className="board-loading">sharpening pencils…</div>}>
+        <Suspense fallback={<div className="g-board-loading">sharpening pencils…</div>}>
           <Board
             view={view}
             ghost={ctl.ghost ? { cells: ctl.ghost.cells, seat: ctl.ghost.seat, valid: ctl.ghost.valid } : null}
@@ -286,36 +307,36 @@ export function GameScreen(props: GameScreenProps) {
         </Suspense>
 
         {myTurn && !over && (
-          <div className="turn-note hand" aria-live="polite">
+          <div className="g-turn-note g-hand" aria-live="polite">
             <span>{ctl.hint ?? (ctl.pending ? "tap again to place" : "your move")}</span>
-            <svg viewBox="0 0 80 60" fill="none" aria-hidden className="hand-arrow">
+            <svg viewBox="0 0 80 60" fill="none" aria-hidden className="g-hand-arrow">
               <path d="M8 6 C 30 4, 56 16, 64 44" />
               <path d="M54 38 L 65 47 L 70 33" />
             </svg>
           </div>
         )}
         {!myTurn && !over && (
-          <div className="waiting-note hand" aria-live="polite">
+          <div className="g-waiting-note g-hand" aria-live="polite">
             {props.thinking === view.turn ? `${turnName} is thinking…` : `${turnName}'s move`}
           </div>
         )}
         {error && (
-          <div className="error-note hand" role="alert">
+          <div className="g-error-note g-hand" role="alert">
             {error}
           </div>
         )}
-        <div className="toasts" aria-live="polite">
+        <div className="g-toasts" aria-live="polite">
           {toasts.map((t) => (
-            <div key={t.id} className="toast hand" style={{ "--c": t.seat !== null ? color(t.seat) : "var(--ink)" } as React.CSSProperties}>
+            <div key={t.id} className="g-toast g-hand" style={{ "--c": t.seat !== null ? color(t.seat) : "var(--ink)" } as React.CSSProperties}>
               {t.text}
             </div>
           ))}
         </div>
 
         {three && (
-          <div className="layer-cut">
+          <div className="g-layer-cut">
             <label>
-              <span className="eyebrow">slice</span>
+              <span className="g-eyebrow">slice</span>
               <input
                 type="range"
                 min={0}
@@ -331,12 +352,12 @@ export function GameScreen(props: GameScreenProps) {
         )}
       </main>
 
-      <section className={`dock ${myTurn ? "live" : ""}`} aria-label="Your shards and surges">
+      <section className={`g-dock ${myTurn ? "live" : ""}`} aria-label="Your shards and surges">
         {seat !== null && myView && (
           <>
-            <div className="tray" role="listbox" aria-label="Shards">
+            <div className="g-tray" role="listbox" aria-label="Shards">
               {tray.map(([size, idx]) => (
-                <div key={size} className="tray-group">
+                <div key={size} className="g-tray-group">
                   {idx.map((i) => {
                     const have = myView.pieces?.[i] ?? true;
                     const fits = ctl.playable.has(i);
@@ -349,7 +370,7 @@ export function GameScreen(props: GameScreenProps) {
                         role="option"
                         aria-selected={selected}
                         disabled={!have}
-                        className={`shard ${selected ? "sel" : ""} ${have && !fits && myTurn ? "nofit" : ""}`}
+                        className={`g-shard ${selected ? "sel" : ""} ${have && !fits && myTurn ? "nofit" : ""}`}
                         title={`${kit.pieces[i]!.name} (${size})${have && !fits && myTurn ? ": doesn't fit anywhere right now" : ""}`}
                         onClick={() => {
                           ctl.selectPiece(i);
@@ -364,38 +385,38 @@ export function GameScreen(props: GameScreenProps) {
               ))}
             </div>
 
-            <div className="controls">
-              <button className="ctl" disabled={ctl.piece === null} onClick={() => { ctl.transform("rotate"); props.sound?.rotate?.(); }} title="Rotate (R)">
+            <div className="g-controls">
+              <button className="g-ctl" disabled={ctl.piece === null} onClick={() => { ctl.transform("rotate"); props.sound?.rotate?.(); }} title="Rotate (R)">
                 ↻ <span>rotate</span>
               </button>
               {three ? (
                 <>
-                  <button className="ctl" disabled={ctl.piece === null} onClick={() => ctl.transform("pitch")} title="Tip forward (T)">
+                  <button className="g-ctl" disabled={ctl.piece === null} onClick={() => ctl.transform("pitch")} title="Tip forward (T)">
                     ⤼ <span>tip</span>
                   </button>
-                  <button className="ctl" disabled={ctl.piece === null} onClick={() => ctl.transform("roll")} title="Roll (G)">
+                  <button className="g-ctl" disabled={ctl.piece === null} onClick={() => ctl.transform("roll")} title="Roll (G)">
                     ⤾ <span>roll</span>
                   </button>
                 </>
               ) : (
-                <button className="ctl" disabled={ctl.piece === null} onClick={() => { ctl.transform("flip"); props.sound?.rotate?.(); }} title="Flip (F)">
+                <button className="g-ctl" disabled={ctl.piece === null} onClick={() => { ctl.transform("flip"); props.sound?.rotate?.(); }} title="Flip (F)">
                   ⇋ <span>flip</span>
                 </button>
               )}
               {ctl.pending && (
-                <button className="ctl primary" onClick={ctl.confirm}>
+                <button className="g-ctl primary" onClick={ctl.confirm}>
                   place
                 </button>
               )}
             </div>
 
             {arena && (
-              <div className="surges" aria-label="Surges">
-                <span className="charge" title="Charge: collect nodes to earn more">
+              <div className="g-surges" aria-label="Surges">
+                <span className="g-charge" title="Charge: collect nodes to earn more">
                   ⚡ <strong>{charge}</strong>
                 </span>
                 <button
-                  className={`surge ${ctl.piece === kit.sparkIndex ? "on" : ""}`}
+                  className={`g-surge ${ctl.piece === kit.sparkIndex ? "on" : ""}`}
                   disabled={!myTurn || charge < 1}
                   onClick={() => ctl.selectPiece(kit.sparkIndex)}
                   title="Spark (S): place a single cell. 1 charge"
@@ -403,7 +424,7 @@ export function GameScreen(props: GameScreenProps) {
                   spark <small>1</small>
                 </button>
                 <button
-                  className={`surge ${ctl.leap ? "on" : ""}`}
+                  className={`g-surge ${ctl.leap ? "on" : ""}`}
                   disabled={!myTurn || charge < 2}
                   onClick={() => ctl.setLeap(!ctl.leap)}
                   title="Leap (L): link from up to two cells away. 2 charge"
@@ -411,7 +432,7 @@ export function GameScreen(props: GameScreenProps) {
                   leap <small>2</small>
                 </button>
                 <button
-                  className={`surge ${ctl.mode === "shatter" ? "on" : ""}`}
+                  className={`g-surge ${ctl.mode === "shatter" ? "on" : ""}`}
                   disabled={!myTurn || charge < 3 || view.shatteredThisTurn}
                   onClick={() => ctl.setMode("shatter")}
                   title="Shatter (X): destroy one enemy cell. 3 charge"
@@ -420,7 +441,7 @@ export function GameScreen(props: GameScreenProps) {
                 </button>
                 {fog && (
                   <button
-                    className="surge"
+                    className="g-surge"
                     disabled={!myTurn || charge < 1 || view.scanning}
                     onClick={ctl.scan}
                     title="Scan (C): see the whole board until your next turn ends. 1 charge"
@@ -431,15 +452,15 @@ export function GameScreen(props: GameScreenProps) {
               </div>
             )}
 
-            <div className="dock-actions">
+            <div className="g-dock-actions">
               {props.undoable && props.onUndo && (
-                <button className="quiet" onClick={props.onUndo} title="Take back your last move">
+                <button className="g-quiet" onClick={props.onUndo} title="Take back your last move">
                   undo
                 </button>
               )}
               {!over && props.onResign && (
                 <button
-                  className="quiet"
+                  className="g-quiet"
                   onClick={() => {
                     if (confirm("Go dark for the rest of this game?")) props.onResign?.();
                   }}
@@ -450,21 +471,21 @@ export function GameScreen(props: GameScreenProps) {
             </div>
           </>
         )}
-        {seat === null && <p className="spectating hand">just watching. enjoy the light show</p>}
+        {seat === null && <p className="g-spectating g-hand">just watching. enjoy the light show</p>}
         {props.aside}
       </section>
 
       {props.handoff !== null && props.handoff !== undefined && (
-        <div className="overlay handoff" role="dialog" aria-modal="true" aria-label="Pass the device">
-          <div className="sheet">
-            <p className="hand" style={{ color: color(props.handoff) }}>
+        <div className="g-overlay handoff" role="dialog" aria-modal="true" aria-label="Pass the device">
+          <div className="g-sheet">
+            <p className="g-hand" style={{ color: color(props.handoff) }}>
               no peeking
             </p>
             <h2>
               Pass it to <em style={{ color: color(props.handoff) }}>{seatName(props, props.handoff)}</em>
             </h2>
             <p>The fog only works if everyone looks away. Ready?</p>
-            <button className="btn-primary" autoFocus onClick={props.onAcceptHandoff}>
+            <button className="g-btn-primary" autoFocus onClick={props.onAcceptHandoff}>
               I'm {seatName(props, props.handoff)}, show me my board
             </button>
           </div>
@@ -490,7 +511,8 @@ function useClock(clock: { seat: number; endsAt: number } | null): number | null
 }
 
 function GameOver(props: GameScreenProps) {
-  const { view, seat } = props;
+  const { view } = props;
+  const seat = props.seat !== null && props.seats[props.seat]?.kind === "human" ? props.seat : null;
   const scores = view.scores ?? view.seats.map((s) => s.score ?? 0);
   const winners = view.winners ?? [];
   const order = [...view.seats.keys()].sort((a, b) => (scores[b] ?? 0) - (scores[a] ?? 0));
@@ -498,9 +520,9 @@ function GameOver(props: GameScreenProps) {
   const tie = winners.length > 1;
   const lit = view.cells.filter((c, i) => c >= 1 && c <= 4 && !(view.flags[i]! & FLAG.CORE)).length;
   return (
-    <div className="overlay over" role="dialog" aria-modal="true" aria-label="Game over">
-      <div className="sheet">
-        <p className="hand">{won ? (tie ? "shared the light" : "you lit the most!") : seat === null ? "that's the game" : "next time"}</p>
+    <div className="g-overlay over" role="dialog" aria-modal="true" aria-label="Game over">
+      <div className="g-sheet">
+        <p className="g-hand">{won ? (tie ? "shared the light" : "you lit the most!") : seat === null ? "that's the game" : "next time"}</p>
         <h2>
           {tie ? "A tie between " : ""}
           {winners.map((w, i) => (
@@ -511,26 +533,26 @@ function GameOver(props: GameScreenProps) {
           ))}
           {tie ? "" : " wins"}
         </h2>
-        <ol className="final">
+        <ol className="g-final">
           {order.map((s) => (
             <li key={s} style={{ "--c": SEAT_COLORS[s] } as React.CSSProperties}>
-              <span className="seat-dot" />
+              <span className="g-seat-dot" />
               <span>{seatName(props, s)}</span>
               <strong>{scores[s]}</strong>
-              {view.seats[s]!.piecesLeft === 0 && <small className="hand">clean sweep +5</small>}
+              {view.seats[s]!.piecesLeft === 0 && <small className="g-hand">clean sweep +5</small>}
             </li>
           ))}
         </ol>
-        <p className="muted">
+        <p className="g-muted">
           {lit} cells lit in {view.round} rounds.
         </p>
-        <div className="row">
+        <div className="g-row">
           {props.onRematch && (
-            <button className="btn-primary" onClick={props.onRematch}>
+            <button className="g-btn-primary" onClick={props.onRematch}>
               Rematch
             </button>
           )}
-          <button className="btn-ghost" onClick={props.onLeave}>
+          <button className="g-btn-ghost" onClick={props.onLeave}>
             Back to the lobby
           </button>
         </div>
@@ -546,15 +568,15 @@ function Help({ three, arena, fog, onClose }: { three: boolean; arena: boolean; 
     return () => window.removeEventListener("keydown", k);
   }, [onClose]);
   return (
-    <div className="overlay help" role="dialog" aria-modal="true" aria-label="Controls" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <p className="hand">the short version</p>
+    <div className="g-overlay help" role="dialog" aria-modal="true" aria-label="Controls" onClick={onClose}>
+      <div className="g-sheet" onClick={(e) => e.stopPropagation()}>
+        <p className="g-hand">the short version</p>
         <h2>Corners only. Never a face.</h2>
         <p>
           Each shard must touch your light at a corner and may never touch your own light along a {three ? "face" : "side"}. Touch
           anyone else however you like. Can't move? You go dark.
         </p>
-        <dl className="keys">
+        <dl className="g-keys">
           <dt>1–0</dt>
           <dd>pick a shard (biggest first)</dd>
           <dt>R / Q</dt>
@@ -581,7 +603,7 @@ function Help({ three, arena, fog, onClose }: { three: boolean; arena: boolean; 
             </>
           )}
         </dl>
-        <button className="btn-ghost" onClick={onClose}>
+        <button className="g-btn-ghost" onClick={onClose}>
           Got it
         </button>
       </div>
