@@ -1,0 +1,11 @@
+target/
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+*.log
+.DS_Store
+web/src/wasm/pkg/
+build/
+playwright-report/
+test-results/
