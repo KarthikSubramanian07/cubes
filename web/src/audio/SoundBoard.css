@@ -1,0 +1,428 @@
+/* Sound lab: the in-game "night" register, kept deliberately plain. */
+.lab {
+  --bg: #0f0e0c;
+  --ink: #ede6d8;
+  --dim: rgba(237, 230, 216, 0.56);
+  --faint: rgba(237, 230, 216, 0.1);
+  --line: rgba(237, 230, 216, 0.09);
+  --card: #161411;
+  --accent: #d9825b;
+  --sans: "Hanken Grotesk Variable", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 500px at 85% -10%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%),
+    var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  padding: 40px clamp(20px, 4vw, 56px) 64px;
+  transition: background 0.6s;
+}
+.lab *,
+.lab *::before,
+.lab *::after {
+  box-sizing: border-box;
+}
+.lab button {
+  font: inherit;
+  color: inherit;
+}
+
+.lab-head {
+  max-width: 1180px;
+  margin: 0 auto 32px;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin: 0 0 14px;
+}
+.lab h1 {
+  font-weight: 380;
+  font-size: clamp(28px, 3.6vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  max-width: 22ch;
+}
+.lab h1 em {
+  font-style: normal;
+  color: var(--accent);
+  transition: color 0.4s;
+}
+.lede {
+  color: var(--dim);
+  max-width: 62ch;
+  line-height: 1.55;
+  margin: 0 0 22px;
+  font-size: 15px;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--dim);
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
+}
+.status b {
+  color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.status .last {
+  margin-left: auto;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 99px;
+  background: var(--faint);
+  color: var(--ink);
+}
+.pill i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8a8173;
+}
+.pill.running i {
+  background: #9fd99a;
+  box-shadow: 0 0 10px #9fd99a;
+}
+.pill.locked i {
+  background: #e6c15a;
+  animation: blink 1.6s ease-in-out infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.lab-body {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 36px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .lab-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 26px;
+}
+.panel section {
+  display: grid;
+  gap: 12px;
+}
+.lab h2 {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin: 0;
+}
+.lab h2 span {
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.6;
+  margin-left: 8px;
+  font-weight: 400;
+}
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--dim);
+}
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Sliders */
+.slider {
+  display: grid;
+  gap: 6px;
+}
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.slider output {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.slider input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+  margin: 0;
+}
+.slider input::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent) var(--pct), var(--faint) var(--pct));
+}
+.slider input::-moz-range-track {
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent) var(--pct), var(--faint) var(--pct));
+}
+.slider input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5.5px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 0 0 4px rgba(15, 14, 12, 0.9);
+}
+.slider input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.slider input:focus-visible {
+  outline: 1px dashed var(--accent);
+  outline-offset: 4px;
+}
+
+/* Toggles */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px 7px 8px;
+  background: var(--faint);
+  border: 1px solid transparent;
+  border-radius: 99px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.toggle .knob {
+  width: 22px;
+  height: 12px;
+  border-radius: 12px;
+  background: rgba(237, 230, 216, 0.18);
+  position: relative;
+  transition: background 0.2s;
+}
+.toggle .knob::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: transform 0.2s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.toggle.on .knob {
+  background: var(--accent);
+}
+.toggle.on .knob::after {
+  transform: translateX(10px);
+}
+.toggle:hover {
+  border-color: var(--line);
+}
+
+/* Seat chips */
+.seats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.seat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  text-align: left;
+  padding: 9px 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.seat i {
+  grid-row: span 2;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--seat);
+  opacity: 0.6;
+  transform: rotate(45deg);
+}
+.seat span {
+  font-size: 14px;
+}
+.seat small {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--dim);
+}
+.seat.on {
+  border-color: color-mix(in oklab, var(--seat) 70%, transparent);
+  background: color-mix(in oklab, var(--seat) 9%, var(--card));
+}
+.seat.on i {
+  opacity: 1;
+  box-shadow: 0 0 12px var(--seat);
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 3px;
+}
+.segmented button {
+  background: none;
+  border: 0;
+  border-radius: 7px;
+  padding: 7px 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--dim);
+}
+.segmented button.on {
+  background: var(--faint);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 50%, transparent);
+}
+
+/* Cue grid */
+.cues {
+  display: grid;
+  gap: 30px;
+}
+.group {
+  display: grid;
+  gap: 12px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.cue {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  padding: 13px 14px 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.18s, transform 0.18s, background 0.18s;
+}
+.cue:hover {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: color-mix(in oklab, var(--accent) 4%, var(--card));
+}
+.cue:active {
+  transform: scale(0.985);
+}
+.cue:focus-visible {
+  outline: 1px dashed var(--accent);
+  outline-offset: 3px;
+}
+.cue-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.cue code {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+}
+.peak {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.blurb {
+  font-size: 12.5px;
+  color: var(--dim);
+  line-height: 1.35;
+  min-height: 2.7em;
+}
+.wave {
+  width: 100%;
+  height: 34px;
+  display: block;
+  margin-top: 2px;
+}
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px var(--accent), inset 0 0 28px color-mix(in oklab, var(--accent) 35%, transparent);
+  animation: ring 0.9s ease-out forwards;
+}
+@keyframes ring {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.foot {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--dim);
+  margin: 4px 0 0;
+  line-height: 1.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring,
+  .pill.locked i {
+    animation: none;
+  }
+}

@@ -10,6 +10,10 @@ export default defineConfig({
     target: "es2023",
     sourcemap: true,
     rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL("./index.html", import.meta.url)),
+        "sound-lab": fileURLToPath(new URL("./sound-lab.html", import.meta.url)),
+      },
       output: {
         manualChunks(id) {
           if (id.includes("node_modules/three") || id.includes("@react-three") || id.includes("postprocessing")) return "three";
