@@ -624,6 +624,14 @@
   border-color: var(--line);
   color: var(--ink);
 }
+.g-peek-back {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+}
 .g-keys {
   display: grid;
   grid-template-columns: auto 1fr;

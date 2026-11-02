@@ -132,6 +132,8 @@ export function GameScreen(props: GameScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [help, setHelp] = useState(false);
   const [layerCut, setLayerCut] = useState<number | null>(null);
+  // The result sheet can be tucked away to look at the final board.
+  const [peek, setPeek] = useState(false);
   const prevView = useRef<View | null>(null);
   const toastId = useRef(0);
   const three = view.config.dims[2] > 1;
@@ -206,6 +208,9 @@ export function GameScreen(props: GameScreenProps) {
   const charge = myView?.charge ?? 0;
   const color = (s: number) => SEAT_COLORS[s] ?? "#999";
   const over = view.phase === "over";
+  useEffect(() => {
+    if (!over) setPeek(false);
+  }, [over]);
   const myTurn = canAct;
   const turnName = seatName(props, view.turn);
 
@@ -333,6 +338,11 @@ export function GameScreen(props: GameScreenProps) {
           <div className="g-error-note g-hand" role="alert">
             {error}
           </div>
+        )}
+        {over && peek && (
+          <button className="g-peek-back g-btn-primary" autoFocus onClick={() => setPeek(false)}>
+            Show the result
+          </button>
         )}
         <div className="g-toasts" aria-live="polite">
           {toasts.map((t) => (
@@ -511,7 +521,7 @@ export function GameScreen(props: GameScreenProps) {
         </div>
       )}
 
-      {over && <GameOver {...props} />}
+      {over && !peek && <GameOver {...props} onPeek={() => setPeek(true)} />}
 
       {help && <Help three={three} arena={arena} fog={fog} onClose={() => setHelp(false)} />}
     </div>
@@ -529,7 +539,7 @@ function useClock(clock: { seat: number; endsAt: number } | null): number | null
   return Math.max(0, Math.ceil((clock.endsAt - now) / 1000));
 }
 
-function GameOver(props: GameScreenProps) {
+function GameOver(props: GameScreenProps & { onPeek(): void }) {
   const { view } = props;
   const seat = props.seat !== null && props.seats[props.seat]?.kind === "human" ? props.seat : null;
   const scores = view.scores ?? view.seats.map((s) => s.score ?? 0);
@@ -571,6 +581,9 @@ function GameOver(props: GameScreenProps) {
               Rematch
             </button>
           )}
+          <button className="g-btn-ghost" onClick={props.onPeek}>
+            See the board
+          </button>
           <button className="g-btn-ghost" onClick={props.onLeave}>
             Back to the lobby
           </button>
