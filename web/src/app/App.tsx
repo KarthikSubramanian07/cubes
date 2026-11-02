@@ -12,6 +12,7 @@ import { ToastProvider } from "@/ui/Toast";
 import { CornerParty } from "./CornerParty";
 import { RouteError, SiteLayout } from "./SiteLayout";
 import { greetConsole } from "./console";
+import { labRoute } from "@/render3d/routes";
 
 export const routes = [
   {
@@ -32,6 +33,7 @@ export const routes = [
     HydrateFallback: () => null,
     ErrorBoundary: RouteError,
   },
+  { ...labRoute, HydrateFallback: () => null, ErrorBoundary: RouteError },
   { path: "game/:id", lazy: () => import("@/pages/Game"), HydrateFallback: () => null, ErrorBoundary: RouteError },
 ];
 
