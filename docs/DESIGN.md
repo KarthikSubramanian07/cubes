@@ -28,7 +28,7 @@ Play it at **playcubes.pages.dev**.
      (2D: diagonal; 3D: shares an edge or vertex but not a face);
    - never share a **face** (2D: an edge) with any of your own cells.
    Touching opponents is always allowed.
-5. **Kit.** 2D: 20 shards, sizes 2–5 (every free polyomino of that size, 89
+5. **Kit.** 2D: 20 shards, sizes 2–5 (every free polyomino of that size, 88
    cells; there is no single cell in the kit). Shards may be rotated and
    flipped. 3D: 17 shards (1 domino, 2 tricubes, all 8 one-sided tetracubes
    including both chiral screws, and 6 planar pentacubes: L P T V Y N), 70
