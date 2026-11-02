@@ -1,0 +1,166 @@
+/* Editorial type. Serif display is light (300-400) with italic accents; never bold. */
+
+.display,
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-optical-sizing: auto;
+  color: var(--ink);
+  font-weight: 340;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+}
+
+h1,
+.display {
+  font-size: var(--fs-h1);
+  line-height: 0.94;
+  font-weight: 300;
+  letter-spacing: -0.035em;
+}
+
+h2 {
+  font-size: var(--fs-h2);
+  line-height: 1.02;
+  letter-spacing: -0.028em;
+  font-weight: 320;
+}
+
+h3 {
+  font-size: var(--fs-h3);
+  line-height: 1.15;
+  font-weight: 400;
+}
+
+h1 em,
+h2 em,
+h3 em,
+.display em {
+  font-style: italic;
+  font-weight: inherit;
+  letter-spacing: -0.02em;
+}
+
+.accent-italic {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 500 var(--fs-xs) / 1 var(--mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.eyebrow::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 1.5px;
+  transform: rotate(45deg);
+  flex: none;
+}
+
+.eyebrow--plain::before {
+  display: none;
+}
+
+.lede {
+  font-size: clamp(1.0625rem, 0.95rem + 0.45vw, 1.3125rem);
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 60ch;
+  text-wrap: pretty;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-feature-settings: "zero";
+}
+
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.hand {
+  font-family: var(--hand);
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+/* Long-form copy (rules page). */
+.prose {
+  font-size: 1.0625rem;
+  line-height: 1.72;
+  color: var(--ink-2);
+}
+
+.prose > * + * {
+  margin-top: 1.05em;
+}
+
+.prose h2 {
+  font-size: clamp(2rem, 1.4rem + 2vw, 2.9rem);
+  margin-top: 0;
+}
+
+.prose h3 {
+  margin-top: 2em;
+  font-size: 1.5rem;
+}
+
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.25em;
+}
+
+.prose li + li {
+  margin-top: 0.4em;
+}
+
+.prose li::marker {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+
+.prose a:not(.btn) {
+  color: var(--ink);
+  text-decoration-color: var(--accent);
+}
+
+.prose table {
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.prose th,
+.prose td {
+  text-align: left;
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px dashed var(--line-strong);
+  vertical-align: top;
+}
+
+.prose th {
+  font: 500 var(--fs-xs) / 1.4 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
