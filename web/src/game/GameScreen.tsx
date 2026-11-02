@@ -341,10 +341,12 @@ export function GameScreen(props: GameScreenProps) {
 
         {three && (
           <div className="g-layer-cut">
-            <label>
+            <label title="Hide the layers above this one">
               <span className="g-eyebrow">slice</span>
               <input
                 type="range"
+                aria-label="Show layers up to"
+                aria-valuetext={layerCut === null ? "all layers" : `layers 1 to ${layerCut + 1}`}
                 min={0}
                 max={view.config.dims[2] - 1}
                 value={layerCut ?? view.config.dims[2] - 1}
@@ -353,6 +355,9 @@ export function GameScreen(props: GameScreenProps) {
                   setLayerCut(v >= view.config.dims[2] - 1 ? null : v);
                 }}
               />
+              <span className="g-layer-val" aria-hidden>
+                {layerCut === null ? "all" : `≤${layerCut + 1}`}
+              </span>
             </label>
           </div>
         )}

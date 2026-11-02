@@ -251,19 +251,37 @@
   }
 }
 
+/* A vertical slider on the right edge: up shows higher layers. It used to sit
+   bottom-left, right on top of the hand-written turn note. */
 .g-layer-cut {
   position: absolute;
-  left: 18px;
-  bottom: 18px;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 8px 12px;
+  padding: 10px 8px 8px;
 }
 .g-layer-cut label {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
   align-items: center;
+}
+.g-layer-cut input[type="range"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 22px;
+  height: min(180px, 30vh);
+  margin: 0;
+}
+.g-layer-cut .g-layer-val {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 3ch;
+  text-align: center;
 }
 
 /* side: seats and dock ------------------------------------------------ */
