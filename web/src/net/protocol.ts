@@ -99,7 +99,9 @@ export type ServerMsg =
   | { t: "error"; code: ErrorCode; message: string }
   | { t: "chat"; name: string; seat: number | null; text: string; at: number }
   | { t: "emote"; name: string; seat: number | null; kind: EmoteKind }
-  | { t: "pong"; ts: number };
+  | { t: "pong"; ts: number }
+  /** After the game: the whole match as engine JSON, for the replay. */
+  | { t: "replay"; game: string };
 
 export type ServerMsgOf<T extends ServerMsg["t"]> = Extract<ServerMsg, { t: T }>;
 

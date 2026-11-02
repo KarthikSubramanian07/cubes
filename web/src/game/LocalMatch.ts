@@ -256,16 +256,7 @@ export class LocalMatch {
   frames(): View[] {
     const log = this.game.log();
     if (this.framesCache?.ply === log.length) return this.framesCache.frames;
-    const g = LocalGame.create(this.opts.config, this.seed);
-    const frames: View[] = [g.view(null)];
-    try {
-      for (const e of log) {
-        g.apply(e.seat, e.action);
-        frames.push(g.view(null));
-      }
-    } finally {
-      g.free();
-    }
+    const frames = this.game.frames();
     this.framesCache = { ply: log.length, frames };
     return frames;
   }

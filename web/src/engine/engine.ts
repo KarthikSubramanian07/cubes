@@ -102,6 +102,11 @@ export class LocalGame implements EngineGame {
     return json ? (JSON.parse(json) as Action) : null;
   }
 
+  /** Every position from the start, unfogged: for replays. */
+  frames(): View[] {
+    return JSON.parse(this.inner.frames()) as View[];
+  }
+
   log(): { seat: number; action: Action }[] {
     return JSON.parse(this.inner.log()) as { seat: number; action: Action }[];
   }

@@ -11,6 +11,7 @@ const IDLE: RoomState = {
   chat: [],
   error: null,
   latency: null,
+  replay: null,
 };
 
 export interface UseRoom extends RoomState {
