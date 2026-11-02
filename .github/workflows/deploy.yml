@@ -57,7 +57,7 @@ jobs:
         run: |
           bun install --frozen-lockfile
           bun run wasm
-          bunx vite build
+          bun run build:site
       - name: Deploy rooms Worker (Rust Durable Object)
         if: steps.creds.outputs.ok == 'true' && hashFiles('crates/rooms/wrangler.toml') != ''
         working-directory: crates/rooms

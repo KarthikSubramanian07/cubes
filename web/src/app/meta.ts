@@ -36,7 +36,8 @@ function setCanonical(href: string): void {
 /** Per-route title, description, canonical, OpenGraph and Twitter tags. */
 export function useDocumentMeta({ title, description, path, image = DEFAULT_IMAGE, noindex }: DocumentMeta): void {
   useEffect(() => {
-    const full = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
+    // "cubes" or a title that already leads with the name stands alone.
+    const full = title === SITE_NAME || title.startsWith(`${SITE_NAME}:`) ? title : `${title} · ${SITE_NAME}`;
     const url = `${SITE_URL}${path}`;
     document.title = full;
     setMeta("name", "description", description);

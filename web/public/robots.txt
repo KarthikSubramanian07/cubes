@@ -1,4 +1,6 @@
 # cubes: a territory game of light and corners
+# Agents: a map of this site is at https://playcubes.pages.dev/llms.txt
+# and every page answers Accept: text/markdown.
 User-agent: *
 Allow: /
 Disallow: /r/

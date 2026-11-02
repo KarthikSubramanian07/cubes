@@ -52,7 +52,7 @@ jobs:
       - run: bun run wasm
       - run: bunx tsc -b --noEmit
       - run: bunx vitest run
-      - run: bunx vite build
+      - run: bun run build:site
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist

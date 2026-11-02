@@ -8,12 +8,13 @@
     "wasm": "wasm-pack build ../crates/wasm --target web --release --out-dir ../../web/src/wasm/pkg --no-pack",
     "wasm:dev": "wasm-pack build ../crates/wasm --target web --dev --out-dir ../../web/src/wasm/pkg --no-pack",
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && bun scripts/prerender.ts",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "build:site": "vite build && bun scripts/prerender.ts"
   },
   "dependencies": {
     "@fontsource-variable/hanken-grotesk": "^5.3.0",
@@ -23,6 +24,7 @@
     "@react-three/drei": "10",
     "@react-three/fiber": "9",
     "@react-three/postprocessing": "3",
+    "marked": "18",
     "postprocessing": "6",
     "react": "19",
     "react-dom": "19",

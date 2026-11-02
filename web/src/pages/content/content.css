@@ -1,0 +1,48 @@
+/* Plain editorial pages (about, contact, privacy), in the rules page's voice. */
+.content {
+  padding: clamp(40px, 7vw, 88px) 0 112px;
+}
+.content__body {
+  min-height: 60vh;
+}
+.content__body h1 {
+  font: 400 clamp(40px, 6vw, 68px) / 1.02 var(--serif);
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin: 14px 0 22px;
+  text-wrap: balance;
+}
+.content__body h1 + p {
+  font-size: var(--fs-lg, 19px);
+  color: var(--ink-2);
+}
+.content__body h2 {
+  font: 400 clamp(26px, 3vw, 34px) / 1.15 var(--serif);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 56px 0 12px;
+  padding-top: 28px;
+  border-top: 1px dashed var(--line-warm, var(--line));
+}
+.content__body p,
+.content__body li {
+  max-width: 68ch;
+  line-height: 1.7;
+}
+.content__body ul {
+  padding-left: 1.2em;
+}
+.content__body li + li {
+  margin-top: 6px;
+}
+.content__body a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.content__body a:hover {
+  text-decoration-thickness: 2px;
+}
+.content__body code {
+  font: 500 0.86em var(--mono);
+}

@@ -154,3 +154,56 @@ table {
     padding-top: env(safe-area-inset-top);
   }
 }
+
+/* Pre-rendered page text: what crawlers, agents and no-JavaScript readers
+   see. The app replaces it on mount; with JavaScript it never shows. */
+.js .prerender {
+  display: none;
+}
+.prerender {
+  display: block;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 56px 24px 96px;
+  color: var(--ink-2);
+}
+.prerender h1 {
+  font: 400 clamp(36px, 6vw, 56px) / 1.04 var(--serif);
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin: 0 0 24px;
+}
+.prerender h2 {
+  font: 400 clamp(24px, 3vw, 30px) / 1.15 var(--serif);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 40px 0 12px;
+}
+.prerender a {
+  color: var(--accent);
+}
+.prerender table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.prerender th,
+.prerender td {
+  text-align: left;
+  padding: 8px 10px 8px 0;
+  border-bottom: 1px dashed var(--line);
+  vertical-align: top;
+}
+.prerender p {
+  margin: 0 0 14px;
+}
+.prerender ul,
+.prerender ol {
+  padding-left: 1.3em;
+}
+.noscript-note {
+  max-width: 720px;
+  margin: 24px auto 0;
+  padding: 10px 24px;
+  font: 500 20px/1.3 var(--hand);
+  color: var(--accent);
+}
