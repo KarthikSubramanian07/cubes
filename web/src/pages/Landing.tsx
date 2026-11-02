@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { useDocumentMeta } from "@/app/meta";
 import { PRESETS, presetConfig } from "@/app/presets";
 import { useInView } from "@/app/useInView";
@@ -51,6 +52,9 @@ function Hero() {
               no account. we checked.
             </HandNote>
           </div>
+          <p className="hero__learn rise" style={{ ["--delay" as string]: "270ms" }}>
+            New here? <Link to="/learn">Learn in three minutes</Link>
+          </p>
           <dl className="hero__facts rise" style={{ ["--delay" as string]: "320ms" }}>
             <div>
               <dt>Players</dt>

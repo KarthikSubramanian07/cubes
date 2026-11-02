@@ -23,6 +23,7 @@ export const routes = [
       { index: true, lazy: () => import("@/pages/Landing") },
       { path: "rules", lazy: () => import("@/pages/Rules") },
       { path: "play", lazy: () => import("@/pages/Play") },
+      { path: "learn", lazy: () => import("@/tutorial/LearnPage") },
       { path: "r/:code", lazy: () => import("@/pages/Room") },
       { path: "*", lazy: () => import("@/pages/NotFound") },
     ],
