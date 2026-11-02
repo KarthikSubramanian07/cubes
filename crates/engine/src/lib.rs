@@ -18,7 +18,7 @@ pub mod rng;
 pub mod session;
 pub mod table;
 
-pub use ai::{Bot, BotOptions, Level, Weights};
+pub use ai::{Bot, BotOptions, Level, Weights, NOVA_MAX_ITERS};
 pub use bits::Board;
 pub use config::{GameConfig, StormConfig};
 pub use game::{Action, Event, Phase, RuleError};

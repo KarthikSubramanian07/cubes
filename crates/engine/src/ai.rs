@@ -110,6 +110,11 @@ impl Default for Weights {
 
 const NONE: u32 = u32::MAX;
 
+/// Hard ceiling on Nova's search iterations per decision, whatever the
+/// budget or clock says. A clock that never advances (or a huge budget)
+/// still ends the search after this many playouts.
+pub const NOVA_MAX_ITERS: u32 = 20_000;
+
 /// Index of the `n`-th set bit of `m`.
 #[inline]
 fn nth_bit(mut m: u32, n: u32) -> usize {
@@ -314,7 +319,8 @@ pub struct Bot<'a> {
     pub rng: Rng,
     /// Milliseconds of thinking time (Nova).
     pub budget_ms: f64,
-    /// Monotonic clock in milliseconds.
+    /// Monotonic clock in milliseconds. Nova reads it once at the start of
+    /// a decision and once before every search iteration.
     pub clock: &'a dyn Fn() -> f64,
     /// True when Scan is available (fog games).
     pub can_scan: bool,
@@ -687,7 +693,7 @@ impl<'a> Bot<'a> {
         let mut nodes: Vec<Node> = vec![Node::with_moves(seat, root_moves, root_prior)];
         let mut sim = pos.clone();
         let mut path: Vec<(u32, u32, u16)> = Vec::new();
-        let max_iters = self.max_iters.unwrap_or(u32::MAX);
+        let max_iters = self.max_iters.unwrap_or(NOVA_MAX_ITERS).min(NOVA_MAX_ITERS);
         let mut iters = 0u32;
         let teams = if self.ctx.config.teams {
             2
@@ -699,7 +705,10 @@ impl<'a> Bot<'a> {
             if iters >= max_iters {
                 break;
             }
-            if iters.is_multiple_of(8) && (self.clock)() - start >= self.budget_ms {
+            // One clock read per iteration: hosts whose clock stands still
+            // during CPU work (the room server) charge each read as one
+            // playout, so this must stay in step with the iterations.
+            if (self.clock)() - start >= self.budget_ms {
                 break;
             }
             iters += 1;
@@ -1362,6 +1371,53 @@ mod tests {
             a
         };
         assert_eq!(pick(7), pick(7));
+    }
+
+    /// Nova reads the clock once per iteration, so a host that charges a
+    /// fixed cost per read (the room server under a frozen clock) gets
+    /// about `budget / cost` playouts, never more.
+    #[test]
+    fn nova_reads_the_clock_once_per_iteration() {
+        let g = Game::new(GameConfig::preset("duel", 2).unwrap(), 4).unwrap();
+        let reads = std::cell::Cell::new(0u32);
+        // Every read costs 2 ms of "time"; a 50 ms budget is 25 reads.
+        let clock = || {
+            reads.set(reads.get() + 1);
+            reads.get() as f64 * 2.0
+        };
+        let mut bot = Bot::new(&g.ctx, Level::Nova, 3, 50.0, &clock);
+        bot.next_action(g.state(), 0).expect("nova acts");
+        assert!((20..=26).contains(&bot.last_iters), "{}", bot.last_iters);
+        assert!(reads.get() <= bot.last_iters + 2, "{} reads", reads.get());
+    }
+
+    /// A clock that never moves cannot keep Nova searching forever.
+    #[test]
+    fn nova_stops_at_the_hard_cap_with_a_frozen_clock() {
+        let mut g = Game::new(GameConfig::preset("duel", 2).unwrap(), 4).unwrap();
+        // Fill most of the board first so each playout is short.
+        let mut guard = 0;
+        while g.state().round < 12 && g.state().phase == Phase::Playing {
+            guard += 1;
+            assert!(guard < 200);
+            let seat = g.state().turn as usize;
+            let ctx = g.ctx.clone();
+            let mut bot = Bot::new(&ctx, Level::Flare, guard, 0.0, &now);
+            let a = bot.next_action(g.state(), seat).expect("flare acts");
+            g.apply(seat, a).unwrap();
+        }
+        if g.state().phase != Phase::Playing {
+            return;
+        }
+        let seat = g.state().turn as usize;
+        let frozen = || 0.0;
+        let mut bot = Bot::new(&g.ctx, Level::Nova, 1, 1e9, &frozen);
+        bot.next_action(g.state(), seat);
+        assert!(bot.last_iters <= NOVA_MAX_ITERS, "{}", bot.last_iters);
+        let mut bot = Bot::new(&g.ctx, Level::Nova, 1, 1e9, &frozen);
+        bot.max_iters = Some(u32::MAX);
+        bot.next_action(g.state(), seat);
+        assert!(bot.last_iters <= NOVA_MAX_ITERS, "{}", bot.last_iters);
     }
 
     /// The simulation position tracks the real game exactly: kit, charge,
