@@ -135,19 +135,21 @@ cd ../crates/rooms && npx wrangler dev # Vite proxies /api to :8787
 
 ## Deploying
 
-Every push to `main` deploys through GitHub Actions: the rooms Worker
-(`playcubes-rooms`) first, then the Pages site (`playcubes`, served at
-playcubes.pages.dev), whose one Pages Function binds the Worker's Durable
-Object by script name so the game and its rooms share an origin. It needs
-`CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as repository secrets.
-
-By hand, from a machine logged in with `wrangler login`:
+Merges don't deploy themselves. Shipping is one command from a machine
+logged in to Cloudflare through wrangler's OAuth (no API token to mint or
+rotate; if the login has lapsed, the script opens the browser for it):
 
 ```sh
-cd crates/rooms && npx wrangler deploy          # the Rust Durable Object
-cd ../../web && bun run wasm && bun run build:site
-npx wrangler pages deploy dist --project-name playcubes --branch main
+scripts/deploy.sh            # rooms Worker, then the site, then a live check
+scripts/deploy.sh --site     # only the site, when no Rust changed
+scripts/deploy.sh --smoke    # also play a real online game against production
 ```
+
+It deploys the rooms Worker (`playcubes-rooms`) first, then the Pages site
+(`playcubes`, served at playcubes.pages.dev), whose one Pages Function binds
+the Worker's Durable Object by script name so the game and its rooms share
+an origin. It refuses to ship uncommitted changes, tags the Pages deployment
+with the commit, and fails loudly if any main page stops answering 200.
 
 ## Docs
 
