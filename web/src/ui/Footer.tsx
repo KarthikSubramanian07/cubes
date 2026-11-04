@@ -14,6 +14,10 @@ export function Footer() {
           <div className="footer__brand">
             <Logo />
             <p>A territory game of light and corners. Free, in the browser, no account, no ads, no idea why you'd need either.</p>
+            <a className="footer__coffee" href="https://buymeacoffee.com/winnerkarthik" target="_blank" rel="noopener">
+              <span aria-hidden="true">☕</span> Buy me a coffee
+            </a>
+            <p className="footer__coffee-note">Free forever. If it made your lunch break better, this keeps the diagonals coming.</p>
           </div>
           <div className="footer__col">
             <h2>Play</h2>
@@ -37,6 +41,7 @@ export function Footer() {
               <li><a href="https://github.com/KarthikSubramanian07/cubes" rel="noopener">Source</a></li>
               <li><Link to="/about">How it's built</Link></li>
               <li><a href="https://github.com/KarthikSubramanian07/cubes/issues" rel="noopener">Report a bug</a></li>
+              <li><a href="https://buymeacoffee.com/winnerkarthik" target="_blank" rel="noopener">Buy me a coffee</a></li>
               <li><Link to="/about">About</Link></li>
               <li><Link to="/contact">Contact</Link></li>
               <li><Link to="/privacy">Privacy</Link></li>

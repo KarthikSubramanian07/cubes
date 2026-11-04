@@ -6,7 +6,7 @@
 
 Your light only grows by its corners. Claim the board, one glowing shard at a time.
 
-**[Play it at playcubes.pages.dev →](https://playcubes.pages.dev)**
+**[Play it at playcubes.pages.dev →](https://playcubes.pages.dev)** · [☕ Buy me a coffee](https://buymeacoffee.com/winnerkarthik)
 
 `rust` · `webassembly` · `cloudflare-durable-objects` · `workers-rs` · `three.js` · `react` · `bun` · `multiplayer` · `browser-game`
 
@@ -163,6 +163,13 @@ with the commit, and fails loudly if any main page stops answering 200.
 Fast move generation borrows the idea of precomputing every placement and
 indexing it by cell from the open-source engines of this genre, especially
 Pentobi by Markus Enzenberger. The code here is our own.
+
+## Keeping it free
+
+cubes has no ads, no accounts and no plans to grow either. If it earned a
+spot in your lunch break, you can
+[buy me a coffee](https://buymeacoffee.com/winnerkarthik). It funds the late
+nights spent arguing with Nova about corners.
 
 ## License
 
