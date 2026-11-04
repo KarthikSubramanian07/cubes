@@ -138,7 +138,11 @@ export function PaperBoard(props: BoardSceneProps): JSX.Element {
       onSelect({ cell, button: 0, shift: false });
       return;
     }
-    if (cell === d.cell) onSelect({ cell, button: e.button, shift: e.shiftKey });
+    // A click that wanders a little still lands where it was released.
+    if (cell === d.cell || Math.hypot(e.clientX - d.x, e.clientY - d.y) <= 14) {
+      emitHover(cell);
+      onSelect({ cell, button: e.button, shift: e.shiftKey });
+    }
   };
 
   const say = useCallback((cell: number, prefix = "") => setAnnounce(prefix + describeCell(view, cell)), [view]);
