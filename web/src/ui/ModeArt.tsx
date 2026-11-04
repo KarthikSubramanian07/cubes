@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { PresetName } from "@/engine/types";
 import "./mode-art.css";
+import { pieceOutlines } from "./piecePath";
 
 const C = 8; // cell px
 const OX = 12;
@@ -16,8 +17,12 @@ function Grid({ cols, rows, ox = OX, oy = OY }: { cols: number; rows: number; ox
 }
 
 function Cells({ cells, ox = OX, oy = OY }: { cells: Cell[]; ox?: number; oy?: number }) {
+  const pieces = pieceOutlines(cells, 12, C, 0.35, ox, oy);
   return (
     <g>
+      {pieces.map((p, i) => (
+        <path key={`p${i}`} className="ma__piece" d={p.d} style={{ ["--c" as string]: `var(--seat-${p.seat})` }} />
+      ))}
       {cells.map(([x, y, s], i) => (
         <rect key={i} className="ma__cell" x={ox + x * C + 0.8} y={oy + y * C + 0.8} width={C - 1.6} height={C - 1.6} rx={1.4} style={{ fill: `var(--seat-${s})` }} />
       ))}
