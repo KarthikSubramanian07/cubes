@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { SEAT_NAMES } from "@/engine/types";
 import { simulate, type SimResult } from "./heroSim";
 import "./hero-board.css";
+import { pieceOutlines } from "@/ui/piecePath";
 
 const SEEDS = [11, 23, 5, 42, 77];
 const STEP_MS = 520;
@@ -84,6 +85,14 @@ export function HeroBoard({ size = 14, seats = 4, stillAt, seed, showScores = tr
     )),
   );
 
+  // Each placement is one piece: a joined base under its squares and a border around it.
+  const pieces = shown.map((p, i) => {
+    const o = pieceOutlines(p.cells.map(([x, y]) => [x, y, p.seat] as const), size, cell, 0.4, pad, pad)[0];
+    return o ? (
+      <path key={`pc${i}`} className={p === last ? "hb__piece is-new" : "hb__piece"} d={o.d} style={{ ["--seat" as string]: `var(--seat-${p.seat})` }} />
+    ) : null;
+  });
+
   return (
     <div ref={hostRef} className={["hb", className].filter(Boolean).join(" ")} data-fading={ply >= total && !still}>
       <svg className="hb__svg theme-night" viewBox={`0 0 ${W} ${W}`} role="img" aria-label="A four-player game of cubes playing itself: coloured shards spread across a dark grid, each one touching its own colour only at a corner.">
@@ -103,6 +112,7 @@ export function HeroBoard({ size = 14, seats = 4, stillAt, seed, showScores = tr
         <rect x={pad} y={pad} width={size * cell} height={size * cell} fill="url(#hb-grid)" />
         <rect className="hb__frame" x={pad} y={pad} width={size * cell} height={size * cell} />
         <g className="hb__bloom" filter="url(#hb-bloom)">{cells}</g>
+        <g>{pieces}</g>
         <g>{cells}</g>
         {sim.cores.map(([x, y], s) => (
           <g key={s} className="hb__core" style={{ ["--seat" as string]: `var(--seat-${s})` }}>

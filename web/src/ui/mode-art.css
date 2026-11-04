@@ -122,3 +122,12 @@
 .si-dash {
   stroke-dasharray: 3 3;
 }
+
+/* A whole piece: a tinted base joining its squares, with a crisp border. */
+.ma__piece {
+  fill: var(--c);
+  fill-opacity: 0.45;
+  stroke: var(--c);
+  stroke-width: 0.9;
+  stroke-linejoin: round;
+}

@@ -163,3 +163,28 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* A whole piece: a glowing base joining its squares, with a bright border. */
+.hb__piece {
+  fill: var(--seat);
+  fill-opacity: 0.5;
+  stroke: var(--seat);
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  filter: brightness(1.25);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hb__piece.is-new {
+    animation: hb-piece-in 520ms ease-out both;
+  }
+}
+
+@keyframes hb-piece-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
