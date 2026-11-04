@@ -49,9 +49,8 @@
   font-weight: 500;
 }
 .game .g-eyebrow {
-  font: 500 11px/1 var(--mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 400 20px / 1 var(--serif);
+  letter-spacing: -0.01em;
   color: var(--accent);
 }
 
@@ -89,7 +88,8 @@
   gap: 14px;
   align-items: baseline;
   flex-wrap: wrap;
-  font: 500 12px/1 var(--mono);
+  font: 450 14px / 1.2 var(--sans);
+  letter-spacing: 0;
   color: var(--muted);
 }
 .g-room-code {
@@ -112,7 +112,7 @@
   padding: 2px;
 }
 .g-seg button {
-  font: 500 12px/1 var(--mono);
+  font: 500 13px / 1 var(--sans);
   padding: 7px 12px;
   border-radius: 999px;
   border: 0;
@@ -350,9 +350,7 @@
 .g-bot-tag,
 .g-away {
   margin-left: 6px;
-  font: 500 10px/1 var(--mono);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  font: 600 11px / 1.2 var(--sans);
   color: var(--muted);
   border: 1px solid var(--line);
   padding: 2px 5px;
@@ -364,12 +362,12 @@
   font-variant-numeric: tabular-nums;
 }
 .g-seat-charge {
-  font: 500 12px/1 var(--mono);
+  font: 500 12px / 1 var(--sans);
   color: var(--c);
 }
 .g-seat-left {
   grid-column: 2 / 5;
-  font: 500 11px/1 var(--mono);
+  font: 500 13px / 1 var(--sans);
   color: var(--muted);
 }
 .g-thinking {
@@ -513,7 +511,7 @@
   font: 400 22px/1 var(--serif);
 }
 .g-surge small {
-  font: 500 10px/1 var(--mono);
+  font: 500 10px / 1 var(--sans);
   color: var(--accent);
   margin-left: 4px;
 }
@@ -724,7 +722,7 @@
 }
 .g-replay-count {
   flex: none;
-  font: 500 11px/1 var(--mono);
+  font: 500 13px / 1 var(--sans);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -924,9 +922,8 @@
 }
 .g-log li.round {
   margin-top: 6px;
-  font: 500 10px/1.6 var(--mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 600 12px / 1.2 var(--sans);
+  letter-spacing: 0;
   color: var(--muted);
   border-top: 1px dashed var(--line);
   padding-top: 4px;

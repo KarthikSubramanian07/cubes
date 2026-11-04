@@ -146,9 +146,8 @@
   padding: 0 10px;
   border-radius: 999px;
   border: 1px solid var(--line-strong);
-  font: 500 11px / 1 var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 500 12px / 1.2 var(--sans);
+  letter-spacing: 0;
   color: var(--muted);
   white-space: nowrap;
 }
@@ -292,9 +291,8 @@
 }
 
 .field__label {
-  font: 500 11px / 1 var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: 600 13px / 1.2 var(--sans);
+  letter-spacing: 0;
   color: var(--muted);
 }
 

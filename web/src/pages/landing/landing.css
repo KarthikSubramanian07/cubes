@@ -88,9 +88,8 @@
 }
 
 .hero__facts dt {
-  font: 500 10.5px / 1 var(--mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 600 13px / 1.2 var(--sans);
+  letter-spacing: 0;
   color: var(--muted);
 }
 
@@ -211,9 +210,8 @@
 }
 
 .how__num {
-  font-size: 12px;
+  font: italic 400 1.25rem / 1 var(--serif);
   color: var(--accent);
-  letter-spacing: 0.1em;
 }
 
 .how__step p {
@@ -460,10 +458,10 @@
 }
 
 .surge__foot {
+  font: 500 13px / 1.2 var(--sans);
+  letter-spacing: 0;
   margin-top: 10px;
   font-size: 11.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--muted);
 }
 
@@ -515,9 +513,9 @@
 }
 
 .built__box span {
+  font: 600 13px / 1.2 var(--sans);
+  letter-spacing: 0;
   font-size: 10.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
   color: var(--muted);
 }
 

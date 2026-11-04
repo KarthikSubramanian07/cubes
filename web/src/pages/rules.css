@@ -32,9 +32,8 @@
 }
 
 .rules__toc-title {
-  font: 500 11px / 1 var(--mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font: 600 13px / 1.2 var(--sans);
+  letter-spacing: 0;
   color: var(--muted);
   margin-bottom: 14px;
 }
@@ -218,9 +217,8 @@
 }
 
 .rules__ref dt {
-  font: 500 11px / 1.9 var(--mono);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: 600 13px / 1.2 var(--sans);
+  letter-spacing: 0;
   color: var(--muted);
 }
 

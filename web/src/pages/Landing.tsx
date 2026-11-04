@@ -233,7 +233,7 @@ function Modes() {
                         p.label
                       )}
                     </h3>
-                    <span className="mode__meta mono">
+                    <span className="mode__meta num">
                       {p.dimension === "3d" ? "3D · " : ""}
                       {dims}
                     </span>
@@ -273,7 +273,7 @@ function Surges() {
             {Array.from({ length: 9 }, (_, i) => (
               <span key={i} className={i < 5 ? "pip is-on" : "pip"} />
             ))}
-            <span className="mono muted surges__charge-label">5 / 9 charge</span>
+            <span className="num muted surges__charge-label">5 / 9 charge</span>
           </div>
         </header>
         <ul className="surges__list">
@@ -290,7 +290,7 @@ function Surges() {
                   </span>
                 </div>
                 <p>{s.text}</p>
-                <p className="surge__foot mono">{s.foot}</p>
+                <p className="surge__foot">{s.foot}</p>
               </div>
             </Reveal>
           ))}

@@ -240,7 +240,7 @@ export function GameScreen(props: GameScreenProps) {
       const l = logLine(props, e);
       if (l) lines.push({ id: ++logId.current, ...l });
     }
-    if (view.round !== prev.round && view.phase === "playing") lines.push({ id: ++logId.current, text: `round ${view.round}`, seat: null, kind: "round" });
+    if (view.round !== prev.round && view.phase === "playing") lines.push({ id: ++logId.current, text: `Round ${view.round}`, seat: null, kind: "round" });
     if (lines.length) setLog((xs) => [...xs, ...lines].slice(-80));
     for (const e of view.events) {
       const text = describe(props, e);
@@ -349,10 +349,10 @@ export function GameScreen(props: GameScreenProps) {
         <div className="g-game-title">
           <span className="g-eyebrow">{props.title}</span>
           {props.roomCode && <span className="g-room-code">room {props.roomCode}</span>}
-          <span className="g-round">round {shown.round}</span>
+          <span className="g-round">Round {shown.round}</span>
           {view.nextStorm !== null && view.config.storm && (
             <span className="g-storm-chip" title="The outer ring of the board will be destroyed">
-              storm in {Math.max(0, view.nextStorm - view.round)} {view.nextStorm - view.round === 1 ? "round" : "rounds"}
+              Storm in {Math.max(0, view.nextStorm - view.round)} {view.nextStorm - view.round === 1 ? "round" : "rounds"}
             </span>
           )}
         </div>
