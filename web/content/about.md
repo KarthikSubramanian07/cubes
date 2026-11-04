@@ -18,4 +18,8 @@ The rules engine, move generation and bots are written in Rust. The same code ru
 
 Everything is on GitHub: [github.com/KarthikSubramanian07/cubes](https://github.com/KarthikSubramanian07/cubes). The design spec, the balance notes and every line of code are there to read, and contributions are welcome.
 
+## Keeping it free
+
+cubes will stay free, with no ads and no accounts. If it has earned a spot in your lunch break and you'd like to say thanks, you can [buy me a coffee](https://buymeacoffee.com/winnerkarthik). It pays for the occasional late night spent arguing with a bot about corners.
+
 [Contact](https://playcubes.pages.dev/contact) · [Privacy](https://playcubes.pages.dev/privacy) · [Play](https://playcubes.pages.dev/play)
