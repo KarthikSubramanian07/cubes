@@ -21,6 +21,7 @@ import { Overlays } from "./scene/Overlays";
 import { Physics } from "./scene/Physics";
 import type { PhysicsWorld } from "./physics";
 import { Picker } from "./scene/Picker";
+import { PieceOutlines } from "./scene/PieceOutlines";
 import { Pieces } from "./scene/Pieces";
 import { Post } from "./scene/Post";
 import { createShared, type SceneShared } from "./scene/shared";
@@ -259,6 +260,7 @@ function SceneRoot(props: SceneRootProps) {
       <group ref={root}>
         <Island view={view} L={L} marks={marks} seat={seat} taps={q.floorTaps} shared={shared} />
         <Pieces view={view} L={L} diff={diff} layerCut={layerCut} marks={marks} reducedMotion={reduced} beams={q.beams} />
+        {L.is2D && <PieceOutlines view={view} L={L} />}
         <Gems view={view} L={L} attach={marks?.attach} seat={seat} layerCut={layerCut} reducedMotion={reduced} />
         {!L.is2D && <Cage view={view} L={L} layerCut={layerCut} points={!view.config.gravity} />}
         <Overlays marks={marks} L={L} />
