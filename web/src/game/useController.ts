@@ -106,20 +106,29 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
     [kit],
   );
 
+  // The ghost for the shard in hand aimed at `cell`: snapped to a legal spot when one is close, red otherwise.
+  const ghostAt = useCallback(
+    (cell: number): Ghost | null => {
+      if (seat === null || piece === null) return null;
+      const cells = orientsOf(piece)[orient] ?? orientsOf(piece)[0]!;
+      const dims = view.config.dims;
+      const at = anchorFor(dims, cells, cell);
+      lastAt.current = at;
+      const snapped = snapPlacement(legal, piece, orient, cell, at, three ? { dims, radius: SNAP_RADIUS_3D } : false);
+      if (snapped) return { cells: snapped.cells, seat, valid: true, placement: snapped };
+      const raw = cellsAt(dims, cells, at, view.config.topology === "torus");
+      if (!raw) return null;
+      return { cells: raw, seat, valid: false, placement: null };
+    },
+    [seat, piece, orient, legal, view.config, orientsOf, three],
+  );
+
   const ghost = useMemo<Ghost | null>(() => {
     if (seat === null || !canAct || mode !== "place" || piece === null) return null;
     if (pinned) return { cells: pinned.cells, seat, valid: true, placement: pinned };
     if (hoverCell === null) return null;
-    const cells = orientsOf(piece)[orient] ?? orientsOf(piece)[0]!;
-    const dims = view.config.dims;
-    const at = anchorFor(dims, cells, hoverCell);
-    lastAt.current = at;
-    const snapped = snapPlacement(legal, piece, orient, hoverCell, at, three ? { dims, radius: SNAP_RADIUS_3D } : false);
-    if (snapped) return { cells: snapped.cells, seat, valid: true, placement: snapped };
-    const raw = cellsAt(dims, cells, at, view.config.topology === "torus");
-    if (!raw) return null;
-    return { cells: raw, seat, valid: false, placement: null };
-  }, [seat, canAct, mode, piece, pinned, hoverCell, orient, legal, view.config, orientsOf, three]);
+    return ghostAt(hoverCell);
+  }, [seat, canAct, mode, piece, pinned, hoverCell, ghostAt]);
 
   const marks = useMemo(() => {
     if (seat === null || !canAct) return { attach: [], targets: [] };
@@ -222,9 +231,15 @@ export function useController(src: ControllerSource, opts: { onError?: (reason: 
         } else opts.onError?.("that piece doesn't fit there");
         return;
       }
-      if (!placeGhost()) opts.onError?.(ghost ? "it must touch your colour at a corner, never a side" : "that's off the board");
+      // Place exactly what's under the pointer now, not the ghost from the last
+      // pointer move: the board may have shifted under a still cursor.
+      setHoverCell(target.cell);
+      const g = pinned && pinVia === "key" && pinned.cells.includes(target.cell) ? ghost : ghostAt(target.cell);
+      const p = g?.placement;
+      if (p) void submit({ type: "place", piece: p.piece, orient: p.orient, at: p.at, leap });
+      else opts.onError?.(g ? "it must touch your colour at a corner, never a side" : "that's off the board");
     },
-    [canAct, seat, mode, marks, piece, pinned, orient, legal, view.config.dims, three, ghost, placeGhost, submit, transform, orientsOf, opts],
+    [canAct, seat, mode, marks, piece, pinned, pinVia, orient, legal, view.config.dims, three, ghost, ghostAt, leap, placeGhost, submit, transform, orientsOf, opts],
   );
 
   const setLeap = useCallback(

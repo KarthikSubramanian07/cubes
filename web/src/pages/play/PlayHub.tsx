@@ -225,7 +225,7 @@ export function PlayHub({ onStart, onJoin, initialKind = "online", initialName =
                     {p.dimension === "3d" && <Pill>3D</Pill>}
                   </span>
                   <span className="preset__blurb">{p.blurb}</span>
-                  <span className="preset__dims mono">
+                  <span className="preset__dims num">
                     {c.dims[2] > 1 ? `${c.dims[0]}×${c.dims[1]}×${c.dims[2]}` : `${c.dims[0]}×${c.dims[1]}`} · {p.seats.length === 1 ? `${p.seats[0]} seats` : `${p.seats[0]}–${p.seats[p.seats.length - 1]} seats`}
                   </span>
                 </button>
@@ -270,7 +270,7 @@ export function PlayHub({ onStart, onJoin, initialKind = "online", initialName =
                     options={AI_LEVELS.map((l) => ({ value: l, label: AI_LABELS[l].label }))}
                   />
                 )}
-                {i === 0 && <span className="seatlist__you mono">you</span>}
+                {i === 0 && <span className="seatlist__you">you</span>}
               </li>
             ))}
           </ul>

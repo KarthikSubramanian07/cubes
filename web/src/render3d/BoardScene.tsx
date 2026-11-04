@@ -255,7 +255,7 @@ function SceneRoot(props: SceneRootProps) {
   return (
     <>
       <color attach="background" args={[NIGHT.background]} />
-      <CameraRig ref={props.rigRef} L={L} preset={cameraPreset ?? "iso"} reducedMotion={reduced} />
+      <CameraRig ref={props.rigRef} L={L} preset={cameraPreset ?? "iso"} reducedMotion={reduced} shared={shared} />
       <Backdrop dust={q.dust} span={span} reducedMotion={reduced} />
       <group ref={root}>
         <Island view={view} L={L} marks={marks} seat={seat} taps={q.floorTaps} shared={shared} />

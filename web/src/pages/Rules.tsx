@@ -276,7 +276,7 @@ export function Component() {
               {SHARDS.map((s) => (
                 <span key={s.id} role="listitem" className="rules__kit-item">
                   <ShardGlyph cells={s.cells} size={11} color="var(--seat-0)" title={`${s.name}, ${s.cells.length} cells`} />
-                  <span className="mono">{s.name}</span>
+                  <span className="num">{s.name}</span>
                 </span>
               ))}
             </div>

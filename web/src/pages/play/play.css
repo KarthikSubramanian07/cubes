@@ -50,9 +50,8 @@
 }
 
 .hub__step-n {
-  font-size: 12px;
+  font: italic 400 1.375rem / 1 var(--serif);
   color: var(--accent);
-  letter-spacing: 0.08em;
 }
 
 .hub__step-head h2 {
@@ -274,9 +273,9 @@
 }
 
 .seatlist__you {
+  font: 600 12px / 1.2 var(--sans);
+  letter-spacing: 0;
   font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--muted);
 }
 
@@ -601,10 +600,9 @@
 }
 .record__big small {
   margin-left: 8px;
-  font: 500 var(--fs-xs) / 1 var(--mono);
+  font: 500 13px / 1.2 var(--sans);
+  letter-spacing: 0;
   color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 .record__table {
   width: 100%;
@@ -620,7 +618,8 @@
 }
 .record__table td {
   text-align: right;
-  font: 500 var(--fs-sm) / 1 var(--mono);
+  font: 500 var(--fs-sm) / 1 var(--sans);
+  font-variant-numeric: tabular-nums;
   font-variant-numeric: tabular-nums;
 }
 .record__table .muted {

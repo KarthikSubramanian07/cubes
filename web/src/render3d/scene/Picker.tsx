@@ -1,5 +1,5 @@
-import type { ThreeEvent } from "@react-three/fiber";
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { BoxGeometry, Matrix4, MeshBasicMaterial, PlaneGeometry, type InstancedMesh } from "three";
 import { OWNER, type View } from "@/engine/types";
 import { cellToWorld, coordsOf, TILE_H, type BoardLayout } from "../coords";
@@ -16,8 +16,10 @@ export interface PickerProps {
   onSelect(t: { cell: number; button: number; shift: boolean }): void;
 }
 
-const TAP_SLOP = 8; // px
-const TAP_MS = 600;
+const TAP_SLOP = 8; // px, touch
+const CLICK_SLOP = 12; // px, mouse and pen
+const TAP_MS = 600; // touch
+const CLICK_MS = 1500; // mouse and pen
 
 /**
  * Invisible pick geometry plus pointer handling. A press only counts as a
@@ -29,7 +31,7 @@ export function Picker({ view, L, layerCut, shared, onHover, onSelect }: PickerP
   const boxGeo = useDisposable(() => new BoxGeometry(1, 1, 1), []);
   const boxes = useRef<InstancedMesh>(null);
   const boxCells = useRef<number[]>([]);
-  const down = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
+  const down = useRef<{ x: number; y: number; t: number; button: number; touch: boolean } | null>(null);
   const pendingOut = useRef(false);
   const cap = L.is2D ? 1 : L.w * L.h * L.d;
 
@@ -56,6 +58,12 @@ export function Picker({ view, L, layerCut, shared, onHover, onSelect }: PickerP
     m.instanceMatrix.needsUpdate = true;
     m.computeBoundingSphere();
   }, [view, L, layerCut]);
+
+  // The board changed under a still pointer (a bot moved, a piece landed): re-aim.
+  const events = useThree((s) => s.events);
+  useEffect(() => {
+    if (shared.pointer.active) events.update?.();
+  }, [view, layerCut, events, shared]);
 
   const handlers = useMemo(() => {
     const hitOf = (e: ThreeEvent<PointerEvent>): PickHit | null => {
@@ -95,7 +103,7 @@ export function Picker({ view, L, layerCut, shared, onHover, onSelect }: PickerP
       },
       onPointerDown(e: ThreeEvent<PointerEvent>) {
         e.stopPropagation();
-        down.current = { x: e.nativeEvent.clientX, y: e.nativeEvent.clientY, t: performance.now(), button: e.nativeEvent.button };
+        down.current = { x: e.nativeEvent.clientX, y: e.nativeEvent.clientY, t: performance.now(), button: e.nativeEvent.button, touch: e.pointerType === "touch" };
       },
       onPointerUp(e: ThreeEvent<PointerEvent>) {
         e.stopPropagation();
@@ -103,7 +111,7 @@ export function Picker({ view, L, layerCut, shared, onHover, onSelect }: PickerP
         down.current = null;
         if (!d || shared.gesture.multi) return;
         const moved = Math.hypot(e.nativeEvent.clientX - d.x, e.nativeEvent.clientY - d.y);
-        if (moved > TAP_SLOP || performance.now() - d.t > TAP_MS) return;
+        if (moved > (d.touch ? TAP_SLOP : CLICK_SLOP) || performance.now() - d.t > (d.touch ? TAP_MS : CLICK_MS)) return;
         const t = targetOf(e);
         if (!t) return;
         hover(t);

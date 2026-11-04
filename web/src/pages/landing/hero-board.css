@@ -122,8 +122,7 @@
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--line);
-  font: 500 12px / 1 var(--mono);
-  letter-spacing: 0.04em;
+  font: 500 13px / 1 var(--sans);
   color: var(--muted);
   transition: border-color var(--dur), background-color var(--dur);
 }

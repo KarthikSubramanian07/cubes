@@ -1,10 +1,11 @@
 import { CameraControls, CameraControlsImpl } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useImperativeHandle, useRef, type Ref } from "react";
-import { Box3, Vector3, type PerspectiveCamera } from "three";
+import { Box3, Matrix4, Vector3, type PerspectiveCamera } from "three";
 import { boardCorners, fitDistance, poseDirection, presetPose } from "../camera";
 import { boardCenter, boardRadius, type BoardLayout } from "../coords";
 import type { CameraPreset } from "../types";
+import type { SceneShared } from "./shared";
 
 export interface RigApi {
   recenter(): void;
@@ -16,11 +17,14 @@ export function CameraRig({
   L,
   preset,
   reducedMotion,
+  shared,
   ref,
 }: {
   L: BoardLayout;
   preset: CameraPreset;
   reducedMotion: boolean;
+  /** While the pointer is over the board the camera holds still, so the board never slides under the cursor. */
+  shared?: SceneShared;
   ref?: Ref<RigApi>;
 }) {
   const controls = useRef<CameraControlsImpl>(null);
@@ -64,9 +68,25 @@ export function CameraRig({
     c.setBoundary(new Box3(new Vector3(-L.w / 2 - pad, -1, -L.h / 2 - pad), new Vector3(L.w / 2 + pad, (L.is2D ? 1 : L.d) + pad, L.h / 2 + pad)));
   }, [L]);
 
+  // When the camera moves under a still pointer (smoothing, a recentre),
+  // re-aim the hover so the ghost always sits under the cursor.
+  const events = useThree((s) => s.events);
+  const lastCam = useRef(new Matrix4());
+  useFrame(() => {
+    if (!shared?.pointer.active) return;
+    if (!lastCam.current.equals(camera.matrixWorld)) {
+      lastCam.current.copy(camera.matrixWorld);
+      events.update?.();
+    }
+  });
+
   useFrame((s) => {
     const c = controls.current;
     if (!c || reducedMotion) return;
+    if (shared?.pointer.active) {
+      drift.current.lastInteract = performance.now() / 1000;
+      return;
+    }
     const now = s.clock.elapsedTime;
     const idle = performance.now() / 1000 - drift.current.lastInteract;
     const amp = Math.min(1, Math.max(0, (idle - 4) / 5));
