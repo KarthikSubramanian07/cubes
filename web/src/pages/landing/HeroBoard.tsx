@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { SEAT_NAMES } from "@/engine/types";
 import { simulate, type SimResult } from "./heroSim";
 import "./hero-board.css";
-import { pieceOutlines } from "@/ui/piecePath";
+import { pieceShapes } from "@/ui/piecePath";
 
 const SEEDS = [11, 23, 5, 42, 77];
 const STEP_MS = 520;
@@ -68,29 +68,22 @@ export function HeroBoard({ size = 14, seats = 4, stillAt, seed, showScores = tr
   const last = ply > 0 && ply <= total ? sim.placements[ply - 1] : undefined;
   const scores = sim.cores.map((_, s) => shown.filter((p) => p.seat === s).reduce((n, p) => n + p.cells.length, 0));
   const current = sim.placements[ply]?.seat ?? last?.seat ?? 0;
-  const g = 1.8;
 
-  const cells = shown.flatMap((p, i) =>
-    p.cells.map(([x, y]) => (
-      <rect
-        key={`${i}-${x}-${y}`}
-        className={p === last ? "hb__cell is-new" : "hb__cell"}
-        x={pad + x * cell + g / 2}
-        y={pad + y * cell + g / 2}
-        width={cell - g}
-        height={cell - g}
-        rx={3.2}
-        style={{ fill: `var(--seat-${p.seat})`, transformOrigin: `${pad + x * cell + cell / 2}px ${pad + y * cell + cell / 2}px` }}
-      />
-    )),
-  );
-
-  // Each placement is one piece: a joined base under its squares and a border around it.
+  // Each placement is one piece: a single solid shape with soft corners and faint seams.
   const pieces = shown.map((p, i) => {
-    const o = pieceOutlines(p.cells.map(([x, y]) => [x, y, p.seat] as const), size, cell, 0.4, pad, pad)[0];
-    return o ? (
-      <path key={`pc${i}`} className={p === last ? "hb__piece is-new" : "hb__piece"} d={o.d} style={{ ["--seat" as string]: `var(--seat-${p.seat})` }} />
-    ) : null;
+    const o = pieceShapes(p.cells.map(([x, y]) => [x, y, p.seat] as const), size, cell, 2.6, pad, pad)[0];
+    if (!o) return null;
+    const [cx, cy] = p.cells.reduce(([sx, sy], [x, y]) => [sx + x, sy + y], [0, 0]).map((v) => pad + (v / p.cells.length + 0.5) * cell);
+    return (
+      <g
+        key={`${i}-${p.seat}`}
+        className={p === last ? "hb__piece is-new" : "hb__piece"}
+        style={{ ["--seat" as string]: `var(--seat-${p.seat})`, transformOrigin: `${cx}px ${cy}px` }}
+      >
+        <path className="hb__piece-body" d={o.d} />
+        {o.seams && <path className="hb__piece-seam" d={o.seams} />}
+      </g>
+    );
   });
 
   return (
@@ -111,9 +104,8 @@ export function HeroBoard({ size = 14, seats = 4, stillAt, seed, showScores = tr
         <rect className="hb__slab" x="0.5" y="0.5" width={W - 1} height={W - 1} rx="18" fill="url(#hb-vignette)" />
         <rect x={pad} y={pad} width={size * cell} height={size * cell} fill="url(#hb-grid)" />
         <rect className="hb__frame" x={pad} y={pad} width={size * cell} height={size * cell} />
-        <g className="hb__bloom" filter="url(#hb-bloom)">{cells}</g>
+        <g className="hb__bloom" filter="url(#hb-bloom)">{pieces}</g>
         <g>{pieces}</g>
-        <g>{cells}</g>
         {sim.cores.map(([x, y], s) => (
           <g key={s} className="hb__core" style={{ ["--seat" as string]: `var(--seat-${s})` }}>
             <rect x={pad + x * cell + 1} y={pad + y * cell + 1} width={cell - 2} height={cell - 2} rx={4} />

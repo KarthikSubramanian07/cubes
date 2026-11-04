@@ -46,16 +46,6 @@
   opacity: 0.7;
 }
 
-.hb__cell {
-  transform-box: view-box;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .hb__cell.is-new {
-    animation: hb-pop 520ms var(--ease-spring) both;
-  }
-}
-
 @keyframes hb-pop {
   0% {
     transform: scale(0.3);
@@ -164,27 +154,26 @@
   }
 }
 
-/* A whole piece: a glowing base joining its squares, with a bright border. */
+/* A whole piece: one solid shape with soft corners and faint seams between its squares. */
 .hb__piece {
+  transform-box: view-box;
+}
+.hb__piece-body {
   fill: var(--seat);
-  fill-opacity: 0.5;
   stroke: var(--seat);
-  stroke-width: 1.6;
+  stroke-width: 4.6;
   stroke-linejoin: round;
-  filter: brightness(1.25);
+}
+.hb__piece-seam {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: 0.22;
+  stroke-width: 1.1;
+  stroke-linecap: round;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   .hb__piece.is-new {
-    animation: hb-piece-in 520ms ease-out both;
-  }
-}
-
-@keyframes hb-piece-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
+    animation: hb-pop 520ms var(--ease-spring) both;
   }
 }
