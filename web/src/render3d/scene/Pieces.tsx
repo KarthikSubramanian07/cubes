@@ -2,7 +2,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { CylinderGeometry, InstancedBufferAttribute, Matrix4, type BufferGeometry, type InstancedMesh } from "three";
 import { FLAG, OWNER, type View } from "@/engine/types";
-import { cellToWorld, coordsOf, type BoardLayout } from "../coords";
+import { TILE_W, cellToWorld, coordsOf, type BoardLayout } from "../coords";
 import type { DiffResult } from "../diff";
 import { coreSpec, glassGeometry, pieceSpec } from "../geometry";
 import { beamMaterial, glassMaterial } from "../materials";
@@ -105,7 +105,23 @@ export function Pieces({ view, L, diff, layerCut, marks, reducedMotion, beams }:
     const write = (mesh: InstancedMesh, geo: BufferGeometry, k: number, i: number, kind: number, seat: number, centreY: number) => {
       cellToWorld(L, i, p);
       if (L.is2D) p[1] = centreY;
-      m.makeTranslation(p[0], p[1], p[2]);
+      if (L.is2D && kind === 0) {
+        // Stretch a tile to meet each side neighbour of the same piece, so a
+        // piece reads as one block of glass. A seat's own pieces never share
+        // a side, so a same-seat side neighbour is always the same piece.
+        const x = i % L.w;
+        const same = (j: number) => {
+          const o = view.cells[j];
+          return o === seat + 1 && (view.flags[j]! & FLAG.CORE) === 0;
+        };
+        const half = TILE_W / 2;
+        const l = x > 0 && same(i - 1) ? 0.5 : half;
+        const r = x < L.w - 1 && same(i + 1) ? 0.5 : half;
+        const t = i >= L.w && same(i - L.w) ? 0.5 : half;
+        const b = i + L.w < L.w * L.h && same(i + L.w) ? 0.5 : half;
+        m.makeScale((l + r) / TILE_W, 1, (t + b) / TILE_W);
+        m.setPosition(p[0] + (r - l) / 2, p[1], p[2] + (b - t) / 2);
+      } else m.makeTranslation(p[0], p[1], p[2]);
       mesh.setMatrixAt(k, m);
       const f = view.flags[i]!;
       const birth = b.get(i);

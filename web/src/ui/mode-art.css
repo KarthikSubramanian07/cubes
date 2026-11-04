@@ -123,11 +123,17 @@
   stroke-dasharray: 3 3;
 }
 
-/* A whole piece: a tinted base joining its squares, with a crisp border. */
-.ma__piece {
+/* A whole piece: one solid shape, corners softened by a round-joined stroke, faint seams between its squares. */
+.ma__piece-body {
   fill: var(--c);
-  fill-opacity: 0.45;
   stroke: var(--c);
-  stroke-width: 0.9;
+  stroke-width: 2;
   stroke-linejoin: round;
+}
+.ma__piece-seam {
+  fill: none;
+  stroke: color-mix(in oklab, var(--c) 70%, #000);
+  stroke-opacity: 0.45;
+  stroke-width: 0.6;
+  stroke-linecap: round;
 }
