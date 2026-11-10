@@ -78,7 +78,8 @@
   --ink: #1e1c19;
   --ink-2: #3b3833;
   --muted: #6f6a61;
-  --faint: #a59e90;
+  /* Lightest warm grey that still clears 4.5:1 on --bg / --panel (WCAG AA). */
+  --faint: #706b62;
   --line: #ded8cb;
   --line-strong: #c9c1b0;
 
@@ -118,7 +119,8 @@
   --ink: #ede6d8;
   --ink-2: #d2cabb;
   --muted: #9a9284;
-  --faint: #645e54;
+  /* Lightest warm grey that still clears 4.5:1 on --bg / --panel (WCAG AA). */
+  --faint: #857f77;
   --line: #2b2823;
   --line-strong: #3d3932;
 
