@@ -61,12 +61,14 @@ export function TopBar({
                 {s.bot ? ` · ${s.bot}` : ""} · {s.piecesLeft} left
               </span>
             </span>
-            <span className="hud-seat__score num" aria-label={`score ${s.score ?? "hidden"}`}>
+            <span className="hud-seat__score num">
+              <span className="sr-only">score </span>
               {s.score ?? "?"}
             </span>
-            <span className="hud-seat__charge" aria-label={`charge ${s.charge ?? "hidden"}`}>
+            <span className="hud-seat__charge">
+              <span className="sr-only">charge {s.charge ?? "hidden"}</span>
               {Array.from({ length: 9 }, (_, k) => (
-                <i key={k} className={s.charge !== null && k < s.charge ? "on" : undefined} />
+                <i key={k} className={s.charge !== null && k < s.charge ? "on" : undefined} aria-hidden="true" />
               ))}
             </span>
           </li>

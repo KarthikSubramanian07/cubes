@@ -41,7 +41,7 @@ export function Component() {
         <HandNote className="nf__note" tilt={-5} arrow="down-right" size="md">
           {moves === 0 ? "this cell is also lost.\nhelp it. diagonally." : moves < 6 ? `${moves} ${moves === 1 ? "move" : "moves"}. still lost.` : "ok, it lives here now."}
         </HandNote>
-        <div className="nf__grid" role="grid" aria-label="A lost cell. Move it diagonally.">
+        <div className="nf__grid" role="group" aria-label="A lost cell. Move it diagonally.">
           {Array.from({ length: N * N }, (_, i) => {
             const x = i % N;
             const y = Math.floor(i / N);
@@ -58,8 +58,10 @@ export function Component() {
                   setMoves((m) => m + 1);
                 }}
               />
+            ) : here ? (
+              <span key={i} className="nf__cell nf__cell--here" role="img" aria-label="the lost cell" />
             ) : (
-              <span key={i} className={here ? "nf__cell nf__cell--here" : "nf__cell"} aria-hidden={!here} aria-label={here ? "the lost cell" : undefined} />
+              <span key={i} className="nf__cell" aria-hidden="true" />
             );
           })}
         </div>
