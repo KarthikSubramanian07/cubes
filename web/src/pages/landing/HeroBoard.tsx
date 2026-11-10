@@ -34,8 +34,11 @@ export function HeroBoard({ size = 14, seats = 4, stillAt, seed, showScores = tr
     [size, seats, round, seed],
   );
   const total = sim.placements.length;
-  const still = stillAt !== undefined || reducedMotion();
-  const [ply, setPly] = useState(() => (still ? Math.min(stillAt ?? Math.round(total * 0.62), total) : 0));
+  const reduce = reducedMotion();
+  const frozen = stillAt !== undefined || reduce;
+  const [paused, setPaused] = useState(false);
+  const still = frozen || paused;
+  const [ply, setPly] = useState(() => (frozen ? Math.min(stillAt ?? Math.round(total * 0.62), total) : 0));
   const visible = useRef(true);
   const hostRef = useRef<HTMLDivElement>(null);
 
@@ -88,6 +91,11 @@ export function HeroBoard({ size = 14, seats = 4, stillAt, seed, showScores = tr
 
   return (
     <div ref={hostRef} className={["hb", className].filter(Boolean).join(" ")} data-fading={ply >= total && !still}>
+      {!frozen && (
+        <button type="button" className="hb__pause" aria-pressed={paused} onClick={() => setPaused((p) => !p)}>
+          {paused ? "Play demo" : "Pause demo"}
+        </button>
+      )}
       <svg className="hb__svg theme-night" viewBox={`0 0 ${W} ${W}`} role="img" aria-label="A four-player game of cubes playing itself: coloured shards spread across a dark grid, each one touching its own colour only at a corner.">
         <defs>
           <filter id="hb-bloom" x="-20%" y="-20%" width="140%" height="140%">
