@@ -343,7 +343,7 @@ export function GameScreen(props: GameScreenProps) {
   return (
     <div className={`game ${effectiveRenderer}`} data-phase={view.phase}>
       <header className="g-game-top">
-        <button className="g-game-leave" onClick={props.onLeave} aria-label="Leave game">
+        <button className="g-game-leave" onClick={props.onLeave} aria-label="Leave cubes">
           <span aria-hidden>←</span> cubes
         </button>
         <div className="g-game-title">
@@ -392,18 +392,24 @@ export function GameScreen(props: GameScreenProps) {
                 {info?.autopilot && <small className="g-bot-tag">autopilot</small>}
                 {info?.connected === false && <small className="g-away">away</small>}
               </span>
-              <span className="g-seat-score" aria-label="score">
+              <span className="g-seat-score">
+                <span className="sr-only">score </span>
                 {s.score ?? "?"}
               </span>
               {arena && (
-                <span className="g-seat-charge" aria-label={`charge ${s.charge ?? "unknown"}`}>
+                <span className="g-seat-charge">
                   {s.charge === null ? "⚡?" : `⚡${s.charge}`}
+                  <span className="sr-only"> charge</span>
                 </span>
               )}
               <span className="g-seat-left" title="Pieces left to place">
                 {s.piecesLeft} pieces left
               </span>
-              {props.thinking === s.seat && <span className="g-thinking" aria-label="thinking" />}
+              {props.thinking === s.seat && (
+                <span className="g-thinking" role="status">
+                  <span className="sr-only">thinking</span>
+                </span>
+              )}
               {active && clockLeft !== null && props.clock?.seat === s.seat && (
                 <span className={`g-clock ${clockLeft <= 5 ? "urgent" : ""}`}>{clockLeft}s</span>
               )}

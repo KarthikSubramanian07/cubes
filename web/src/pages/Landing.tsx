@@ -269,9 +269,9 @@ function Surges() {
             Glowing nodes are scattered evenly around the board, so nobody gets a better map. Cover one with a piece to earn one charge (up to nine),
             then spend charge on these power-ups during your turn. Pure mode turns them off.
           </p>
-          <div className="surges__charge" aria-label="A charge meter, five of nine">
+          <div className="surges__charge">
             {Array.from({ length: 9 }, (_, i) => (
-              <span key={i} className={i < 5 ? "pip is-on" : "pip"} />
+              <span key={i} className={i < 5 ? "pip is-on" : "pip"} aria-hidden="true" />
             ))}
             <span className="num muted surges__charge-label">5 / 9 charge</span>
           </div>
@@ -283,9 +283,10 @@ function Surges() {
               <div>
                 <div className="surge__top">
                   <h3>{s.label}</h3>
-                  <span className="surge__cost" aria-label={`costs ${s.cost} charge`}>
+                  <span className="surge__cost">
+                    <span className="sr-only">costs {s.cost} charge</span>
                     {Array.from({ length: s.cost }, (_, k) => (
-                      <span key={k} className="pip is-on" />
+                      <span key={k} className="pip is-on" aria-hidden="true" />
                     ))}
                   </span>
                 </div>

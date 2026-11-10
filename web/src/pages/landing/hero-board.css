@@ -3,6 +3,32 @@
   width: 100%;
 }
 
+.hb__pause {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  min-height: 32px;
+  min-width: 44px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #3a362f;
+  background: rgba(15, 14, 12, 0.82);
+  color: #ede6d8;
+  font: 500 12px / 1.2 var(--sans);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.hb__pause:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.hb__pause[aria-pressed="true"] {
+  border-color: color-mix(in oklab, var(--accent) 50%, #3a362f);
+}
+
 .hb__svg {
   width: 100%;
   height: auto;

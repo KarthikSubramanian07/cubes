@@ -1,7 +1,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState, type JSX } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type JSX } from "react";
 import { Color, type Group } from "three";
-import { OWNER, type View } from "@/engine/types";
+import { OWNER, SEAT_NAMES, type View } from "@/engine/types";
 import { cellToWorld, coordsOf, layoutOf } from "./coords";
 import { diffViews } from "./diff";
 import { FxEngine } from "./fxEngine";
@@ -47,13 +47,29 @@ export function BoardScene(props: BoardSceneProps): JSX.Element {
   const rig = useRef<RigApi>(null);
   const shared = useMemo(createShared, []);
   const lastMiss = useRef(0);
-  const { onHover } = props;
+  const { onHover, view } = props;
+  const sumId = "nb" + useId().replace(/[^a-zA-Z0-9]/g, "");
+  const [w, h, d] = view.config.dims;
+  const summary = useMemo(() => {
+    const counts = [0, 0, 0, 0];
+    for (const owner of view.cells) {
+      // Owners 1..=4 are seat+1; 0/250+ are empty or terrain.
+      if (owner >= 1 && owner <= 4) counts[owner - 1]! += 1;
+    }
+    const seats = view.seats.map((s) => `${SEAT_NAMES[s.seat] ?? `Seat ${s.seat + 1}`} ${counts[s.seat] ?? 0} cells`).join(", ");
+    const shape = d > 1 ? `${w} by ${h} by ${d} night board` : `${w} by ${h} night board`;
+    return `${shape}. ${seats}. Arrow keys move the cursor relative to the camera; click places. The 3D canvas is visual only: scores, turns and the match log beside the board carry the same state in text.`;
+  }, [view, w, h, d]);
 
   return (
     <div
       className={props.className}
       data-quality={tier}
       style={{ position: "relative", width: "100%", height: "100%", touchAction: "none", background: NIGHT.background }}
+      role="application"
+      aria-roledescription="game board"
+      aria-label="cubes night board"
+      aria-describedby={sumId}
       onContextMenu={(e) => e.preventDefault()}
       onPointerDown={(e) => {
         const g = shared.gesture;
@@ -69,11 +85,15 @@ export function BoardScene(props: BoardSceneProps): JSX.Element {
         onHover(null);
       }}
     >
+      <p id={sumId} className="sr-only">
+        {summary}
+      </p>
       <Canvas
         dpr={q.dpr}
         flat
         gl={{ antialias: false, powerPreference: "high-performance", alpha: false, stencil: false }}
         camera={{ fov: 36, near: 0.6, far: 700, position: [0, 18, 22] }}
+        aria-hidden="true"
         onPointerMissed={(e) => {
           // Double click / double tap on empty space recentres the camera.
           if (e.type === "dblclick") {

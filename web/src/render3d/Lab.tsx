@@ -344,7 +344,7 @@ export function Lab() {
         </div>
       )}
 
-      <button className="lab-toggle" onClick={() => setPanel((v) => !v)} aria-label="toggle panel">
+      <button className="lab-toggle" onClick={() => setPanel((v) => !v)} aria-label={panel ? "hide panel" : "lab panel"}>
         {panel ? "hide" : "lab"}
       </button>
 
